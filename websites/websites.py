@@ -6,20 +6,19 @@ from bs4 import BeautifulSoup
 
 
 df = pd.read_excel("websites\kmo's_Vlaanderen_2021.xlsx",usecols="B,C,D,E,L",sheet_name="Lijst")
-
-
-website=0
-geen_website=0
+blacklist = ["trendstop","bizzy","linkedin","bloomberg","goudengids","cylex","companyweb","febev","openingsuren","facebook","vdab","eita","dnb","wikipedia","kompass","viamichelin"]
 counter=0
-max=10
+
 for index,row in df.iterrows():
-    if counter <= max:
-        if isinstance(row[4],float):
-            for j in search(row[0],num_results=2):
+    if isinstance(row[4],float):
+        for j in search(row[0],num_results=6):
+            aanwezig = False
+            for item in blacklist:
+                if item in j:
+                    aanwezig=True
+            if aanwezig ==False:
                 print(j)
-            print(f'{counter+1}\n')
-            counter+=1
+                break
+        print(f"{counter+1} {row[0]}\n")
+        counter+=1
 
-
-
-        
