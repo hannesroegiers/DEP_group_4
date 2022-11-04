@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, func, Table, MetaData, desc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 import psycopg2
+import pdfplumber
 
 # initialization of PostgreSQL stuff
 pg_engine = create_engine('postgresql://postgres:loldab123@vichogent.be:40031/durabilitysme')
@@ -19,9 +20,14 @@ class PG_Employee(pg_Base):  # each table is a subclass from the Base class
 Session = sessionmaker(bind=pg_engine)
 pg_session = Session()
 
-pd_xl_file = pd.read_excel("kmo's_Vlaanderen_2021.xlsx", sheet_name= "Lijst")
+pd_xl_file = pd.read_excel("websites/kmo's_Vlaanderen_2021.xlsx", sheet_name= "Lijst")
 
-pd_pdf = 
+try:
+    with pdfplumber.open("../PDF/") as pdf:
+
+
+except:
+
 
 for el in pd_xl_file.values:
     
