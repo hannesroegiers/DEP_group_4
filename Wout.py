@@ -1,10 +1,12 @@
 import pandas as pd
 
-import sqlalchemy
+from sqlalchemy import select, update
 from sqlalchemy import create_engine, func, Table, MetaData, desc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 import psycopg2
+import pdfplumber
+import os
 
 # initialization of PostgreSQL stuff
 pg_engine = create_engine('postgresql://postgres:loldab123@vichogent.be:40031/durabilitysme')
@@ -75,24 +77,46 @@ def bepaalSector(nummer:int) -> str:
     else:
         return f"WRONG CODE: {afdeling}"
 
-
-for rij in xl_file.values:
+try:
     
-    print(rij[1])
+    # for rij in xl_file.values:
+        
+    #     print(rij[1])
+        # table 'kmo' vullen vanuit de excel
+        # sector = bepaalSector(rij[3])
+        # pg_kmo = PG_SME(ondernemingsnummer=int(rij[7].replace(' ','')), bedrijfsnaam= rij[1], adres=  rij[9], website=  rij[11], sector= sector, gemeente=  rij[2])
+        # pg_session.add(pg_kmo)
 
-    # table jaarverslag vullen vanuit de excel
-    omzet = rij[5] if rij[5] != 'n.b.' else 0
-    pg_jaarverslag = PG_SME(ondernemingsnummer=int(rij[7].replace(' ','')), jaar=2021, personeelsbestand= rij[4], omzet= omzet, totaal_activa= rij[6], tekst= "")
-    pg_session.add(pg_jaarverslag)
+        # table jaarverslag vullen vanuit de excel
+        # omzet = rij[5] if rij[5] != 'n.b.' else 0
+        # pg_jaarverslag = PG_SME(ondernemingsnummer=int(rij[7].replace(' ','')), jaar=2021, personeelsbestand= rij[4], omzet= omzet, totaal_activa= rij[6], tekst= "")
+        # pg_session.add(pg_jaarverslag)
 
-    # table 'kmo' vullen vanuit de excel
-    # sector = bepaalSector(rij[3])
-    # pg_kmo = PG_SME(ondernemingsnummer=int(rij[7].replace(' ','')), bedrijfsnaam= rij[1], adres=  rij[9], website=  rij[11], sector= sector, gemeente=  rij[2])
-    # pg_session.add(pg_kmo)
+
+    # table jaarverslag tekst toevoegen
+    directory = 'PDF'
+    for filename in os.listdir(directory):
+        path = os.path.join(directory, filename)
+        print(path)
+        ondernummer = (path.split('_')[1])
+        with pdfplumber.open(path) as pdf:
+            jaarverslag = ""
+            for page in pdf.pages:
+                print(page.page_number, end='\t')
+                jaarverslag += page.extract_text()
+            kmo = pg_session.execute(
+                    update(PG_SME)
+                    .where(PG_SME.ondernemingsnummer == ondernummer)
+                    .values(tekst=jaarverslag)
+                )
+        pg_session.commit()
+        break
     
 
-pg_session.commit()
-pg_session.close()
-pg_conn.close()
+
+finally:    
+    pg_session.close()
+    pg_conn.close()
+    print("Connections closed")
 
 
