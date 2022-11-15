@@ -110,7 +110,7 @@ try:
                     .values(tekst=jaarverslag)
                 )
         pg_session.commit()
-        break
+        
     
 
 
