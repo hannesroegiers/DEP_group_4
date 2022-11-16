@@ -149,7 +149,7 @@ def domeinen_toevoegen():
         zoektermen = set(xl_file.iloc[row][5].split(','))
         for term in zoektermen:
             pg_session.add(PG_term(zoekwoord= term, subdomein=xl_file.iloc[row][4]))
-    #Environment
+    #Governance
     for row in range(4,6):
         pg_session.add(PG_sub(subdomein= xl_file.iloc[row][8], hoofddomein=xl_file.iloc[1][8]))
         zoektermen = set(xl_file.iloc[row][9].split(','))
