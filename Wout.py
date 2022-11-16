@@ -142,23 +142,40 @@ def domeinen_toevoegen():
         pg_session.add(PG_sub(subdomein= xl_file.iloc[row][0], hoofddomein=xl_file.iloc[1][0]))
         zoektermen = set(xl_file.iloc[row][1].split(','))
         for term in zoektermen:
-            pg_session.add(PG_term(zoekwoord= term, subdomein=xl_file.iloc[row][0]))
+            pg_session.add(PG_term(zoekwoord= term.strip(), subdomein=xl_file.iloc[row][0]))
     #Social
     for row in range(4,8):
         pg_session.add(PG_sub(subdomein= xl_file.iloc[row][4], hoofddomein=xl_file.iloc[1][4]))
         zoektermen = set(xl_file.iloc[row][5].split(','))
         for term in zoektermen:
-            pg_session.add(PG_term(zoekwoord= term, subdomein=xl_file.iloc[row][4]))
+            pg_session.add(PG_term(zoekwoord= term.strip(), subdomein=xl_file.iloc[row][4]))
     #Governance
     for row in range(4,6):
         pg_session.add(PG_sub(subdomein= xl_file.iloc[row][8], hoofddomein=xl_file.iloc[1][8]))
         zoektermen = set(xl_file.iloc[row][9].split(','))
         for term in zoektermen:
-            pg_session.add(PG_term(zoekwoord= term, subdomein=xl_file.iloc[row][8]))
+            pg_session.add(PG_term(zoekwoord= term.strip(), subdomein=xl_file.iloc[row][8]))
     
     pg_session.commit()
 
+def machinelearningdata_opvullen():
+    class PG_SME(pg_Base):  # each table is a subclass from the Base class
+        __table__ = pg_Base.metadata.tables['machinelearningData']
+
+    xl_file = pd.read_excel("websites/kmo's_Vlaanderen_2021.xlsx", sheet_name= "Lijst")
+
+    for rij in xl_file.values:
+        
+        print(rij[1])
+        # table machinelearningData vullen vanuit de excel
+        omzet = rij[5] if rij[5] != 'n.b.' else 0
+        pg_machinelearningData = PG_SME(ondernemingsnummer=int(rij[7].replace(' ','')), jaar=2021, personeelsledenAantal= rij[4], omzet= omzet)
+        pg_session.add(pg_machinelearningData)
     
+    pg_session.commit()
+
+
+
 
 try:
 
@@ -166,9 +183,11 @@ try:
 
     # kmo_opvullen()
 
-    # jaarverslag_tekst_toevoegen()  
+    jaarverslag_tekst_toevoegen()  
 
-    domeinen_toevoegen()
+    # domeinen_toevoegen()
+
+    # machinelearningdata_opvullen()
 
 
 finally:    
