@@ -16,17 +16,12 @@ metadata = MetaData(pg_engine)
 pg_Base = declarative_base(pg_engine) # initialize Base class
 pg_Base.metadata.reflect(pg_engine)   # get metadata from database
 
-class PG_SME(pg_Base):  # each table is a subclass from the Base class
-    __table__ = pg_Base.metadata.tables['jaarverslag']
-    
 Session = sessionmaker(bind=pg_engine)
 pg_session = Session()
 
-# try:
-#     with pdfplumber.open(f"../PDF/jaarraport_{ondernemingsnummer}.*") as pdf:
-#         re.
+# class PG_SME(pg_Base):  # each table is a subclass from the Base class
+#     __table__ = pg_Base.metadata.tables['jaarverslag']
 
-# except:
 
 def bepaalSector(nummer:int) -> str:
     afdeling = nummer // 1000
@@ -76,6 +71,9 @@ def bepaalSector(nummer:int) -> str:
         return f"WRONG CODE: {afdeling}"
 
 def kmo_opvullen():
+    class PG_SME(pg_Base):  # each table is a subclass from the Base class
+        __table__ = pg_Base.metadata.tables['kmo']
+
     xl_file = pd.read_excel("websites/kmo's_Vlaanderen_2021.xlsx", sheet_name= "Lijst")
 
     for rij in xl_file.values:
@@ -85,8 +83,13 @@ def kmo_opvullen():
         sector = bepaalSector(rij[3])
         pg_kmo = PG_SME(ondernemingsnummer=int(rij[7].replace(' ','')), bedrijfsnaam= rij[1], adres=  rij[9], website=  rij[11], sector= sector, gemeente=  rij[2])
         pg_session.add(pg_kmo)
+    
+    pg_session.commit()
 
 def jaarverslag_opvullen():
+    class PG_SME(pg_Base):  # each table is a subclass from the Base class
+        __table__ = pg_Base.metadata.tables['jaarverslag']
+
     xl_file = pd.read_excel("websites/kmo's_Vlaanderen_2021.xlsx", sheet_name= "Lijst")
 
     for rij in xl_file.values:
@@ -96,8 +99,13 @@ def jaarverslag_opvullen():
         omzet = rij[5] if rij[5] != 'n.b.' else 0
         pg_jaarverslag = PG_SME(ondernemingsnummer=int(rij[7].replace(' ','')), jaar=2021, personeelsbestand= rij[4], omzet= omzet, totaal_activa= rij[6], tekst= "")
         pg_session.add(pg_jaarverslag)
+    
+    pg_session.commit()
 
 def jaarverslag_tekst_toevoegen():
+    class PG_SME(pg_Base):  # each table is a subclass from the Base class
+        __table__ = pg_Base.metadata.tables['jaarverslag']
+
     # table jaarverslag tekst toevoegen
     directory = 'PDF'
     for filename in os.listdir(directory):
@@ -122,6 +130,35 @@ def jaarverslag_tekst_toevoegen():
         finally:
             pdf.close()
 
+def domeinen_toevoegen():
+    class PG_sub(pg_Base):  # each table is a subclass from the Base class
+        __table__ = pg_Base.metadata.tables['subdomein']
+    class PG_term(pg_Base):  # each table is a subclass from the Base class
+        __table__ = pg_Base.metadata.tables['termen']
+
+    xl_file = pd.read_excel("zoektermen_opdracht_sem1_sv.xlsx")
+    #Environment
+    for row in range(4,9):
+        pg_session.add(PG_sub(subdomein= xl_file.iloc[row][0], hoofddomein=xl_file.iloc[1][0]))
+        zoektermen = set(xl_file.iloc[row][1].split(','))
+        for term in zoektermen:
+            pg_session.add(PG_term(zoekwoord= term, subdomein=xl_file.iloc[row][0]))
+    #Social
+    for row in range(4,8):
+        pg_session.add(PG_sub(subdomein= xl_file.iloc[row][4], hoofddomein=xl_file.iloc[1][4]))
+        zoektermen = set(xl_file.iloc[row][5].split(','))
+        for term in zoektermen:
+            pg_session.add(PG_term(zoekwoord= term, subdomein=xl_file.iloc[row][4]))
+    #Environment
+    for row in range(4,6):
+        pg_session.add(PG_sub(subdomein= xl_file.iloc[row][8], hoofddomein=xl_file.iloc[1][8]))
+        zoektermen = set(xl_file.iloc[row][9].split(','))
+        for term in zoektermen:
+            pg_session.add(PG_term(zoekwoord= term, subdomein=xl_file.iloc[row][8]))
+    
+    pg_session.commit()
+
+    
 
 try:
 
@@ -129,7 +166,10 @@ try:
 
     # kmo_opvullen()
 
-    jaarverslag_tekst_toevoegen()  
+    # jaarverslag_tekst_toevoegen()  
+
+    domeinen_toevoegen()
+
 
 finally:    
     pg_session.close()
