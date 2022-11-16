@@ -22,8 +22,6 @@ class PG_SME(pg_Base):  # each table is a subclass from the Base class
 Session = sessionmaker(bind=pg_engine)
 pg_session = Session()
 
-xl_file = pd.read_excel("websites/kmo's_Vlaanderen_2021.xlsx", sheet_name= "Lijst")
-
 # try:
 #     with pdfplumber.open(f"../PDF/jaarraport_{ondernemingsnummer}.*") as pdf:
 #         re.
@@ -77,46 +75,63 @@ def bepaalSector(nummer:int) -> str:
     else:
         return f"WRONG CODE: {afdeling}"
 
-try:
-    
-    # for rij in xl_file.values:
+def kmo_opvullen():
+    xl_file = pd.read_excel("websites/kmo's_Vlaanderen_2021.xlsx", sheet_name= "Lijst")
+
+    for rij in xl_file.values:
         
-    #     print(rij[1])
+        print(rij[1])
         # table 'kmo' vullen vanuit de excel
-        # sector = bepaalSector(rij[3])
-        # pg_kmo = PG_SME(ondernemingsnummer=int(rij[7].replace(' ','')), bedrijfsnaam= rij[1], adres=  rij[9], website=  rij[11], sector= sector, gemeente=  rij[2])
-        # pg_session.add(pg_kmo)
+        sector = bepaalSector(rij[3])
+        pg_kmo = PG_SME(ondernemingsnummer=int(rij[7].replace(' ','')), bedrijfsnaam= rij[1], adres=  rij[9], website=  rij[11], sector= sector, gemeente=  rij[2])
+        pg_session.add(pg_kmo)
 
+def jaarverslag_opvullen():
+    xl_file = pd.read_excel("websites/kmo's_Vlaanderen_2021.xlsx", sheet_name= "Lijst")
+
+    for rij in xl_file.values:
+        
+        print(rij[1])
         # table jaarverslag vullen vanuit de excel
-        # omzet = rij[5] if rij[5] != 'n.b.' else 0
-        # pg_jaarverslag = PG_SME(ondernemingsnummer=int(rij[7].replace(' ','')), jaar=2021, personeelsbestand= rij[4], omzet= omzet, totaal_activa= rij[6], tekst= "")
-        # pg_session.add(pg_jaarverslag)
+        omzet = rij[5] if rij[5] != 'n.b.' else 0
+        pg_jaarverslag = PG_SME(ondernemingsnummer=int(rij[7].replace(' ','')), jaar=2021, personeelsbestand= rij[4], omzet= omzet, totaal_activa= rij[6], tekst= "")
+        pg_session.add(pg_jaarverslag)
 
-
+def jaarverslag_tekst_toevoegen():
     # table jaarverslag tekst toevoegen
     directory = 'PDF'
     for filename in os.listdir(directory):
         path = os.path.join(directory, filename)
         print(path)
         ondernummer = (path.split('_')[1])
-        with pdfplumber.open(path) as pdf:
-            jaarverslag = ""
-            for page in pdf.pages:
-                print(page.page_number, end='\t')
-                jaarverslag += page.extract_text()
-            kmo = pg_session.execute(
-                    update(PG_SME)
-                    .where(PG_SME.ondernemingsnummer == ondernummer)
-                    .values(tekst=jaarverslag)
-                )
-        pg_session.commit()
-        
-    
+        try:
+            with pdfplumber.open(path) as pdf:
+                jaarverslag = ""
+                for page in pdf.pages:
+                    print(page.page_number, end='\t')
+                    jaarverslag += page.extract_text()
 
+                kmo = pg_session.execute(
+                        update(PG_SME)
+                        .where(PG_SME.ondernemingsnummer == ondernummer)
+                        .values(tekst=jaarverslag)
+                    )
+            pg_session.commit()
+        except(ValueError):
+            None
+        finally:
+            pdf.close()
+
+
+try:
+
+    # jaarverslag_opvullen()
+
+    # kmo_opvullen()
+
+    jaarverslag_tekst_toevoegen()  
 
 finally:    
     pg_session.close()
     pg_conn.close()
     print("Connections closed")
-
-
