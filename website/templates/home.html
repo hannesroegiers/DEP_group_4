@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <!-- <h1>{% block title %} KMO's {% endblock %}</h1> -->
+
+    <div class="table-responsive">
+        <table id="data" class="table  table-striped" >
+          <thead>    
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <link rel="stylesheet" href="/static/index.css">
+            <tr>
+              <th>Ondernemingsnummer</th>
+              <th>Naam</th>
+              <th>website</th>
+              <th>duurzaamheids-score</th>
+              <th>sector</th>
+              <th>gemeente</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for kmo in bedrijven %}
+              <tr>
+                  <td><a href= {{ jaarverslagen_url + kmo[0]|string }} target="_blank">{{ kmo[0] }}</a></td>
+                  <td><a href={{ url_for('bedrijf',ondernemingsnummer= kmo[0]) }} target="_blank">{{ kmo[1] }}</a></td>
+                  <td><a href="" target="_blank">{{ kmo[3] }}</a></td>
+                  <td>"komt later"</td>
+                  <td>{{ kmo[4] }}</td>
+                  <td>{{ kmo[5] }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+{% endblock %}
+{% block scripts %}
+  <script>
+    $(document).ready(function () {
+      $('#data').DataTable({
+        columns: [
+        {orderable: false, searchable: true},
+        {orderable: true, searchable: true},
+        {orderable: false, searchable: false},
+        {orderable: true, searchable: false},
+        {orderable: true, searchable: true},
+         {orderable: true, searchable: true},]
+      });
+    });
+  </script>
+{% endblock %}

@@ -1,0 +1,89 @@
+.html{
+    margin: 0 2% 0.5%;
+}
+.aliceblue{
+    background-color: lightgray;
+}
+.h-max{
+    height: 100%;
+}
+.hoofding{
+    padding: 1rem;
+}
+.flex-container{
+    display: flex;
+}
+.space-start{
+    justify-content: flex-start;
+}
+.flex-around{
+    justify-content: space-around;
+}
+
+a{
+    text-decoration: none;
+    color: black;
+}
+a:hover{
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+.ol-r{
+    border: 2px red solid;
+}
+.ol-g{
+    border: 2px green solid;
+}
+.ol-b{
+    border: 2px blue solid;
+}
+main{
+    max-width: 1320px;
+    margin: auto;
+}
+#environmental,#social,#governance{
+    width: 26%;
+}
+#environmental>div,#social>div,#governance>div{
+    border-radius: 2rem;
+    height: 160px;
+    padding: 1rem;    
+    background-color: whitesmoke;
+}
+#environmental>h2,#social>h2,#governance>h2{
+    text-align: center;
+}
+#environmental > div{
+    border: 2px solid green;
+}
+#social > div{
+    border: 2px solid red;
+}
+#governance > div{
+    border: 2px solid #EFCC00;
+}
+
+.bedrijf-titel{
+    width: 42%;
+    margin: auto;
+    border: 2px gray solid;
+    background-color: whitesmoke;
+    border-radius: 2rem;
+    margin-top: 3rem;
+}
+.bedrijf-naam{
+    text-align: center;
+}
+
+.esg{
+    margin-top: 5rem;
+}
+#bold{
+    font-weight: bold;
+}
+#scores{
+    width: 90%;
+    margin: 5rem auto 0;
+    /* border: 2px solid green; */
+}

@@ -4,11 +4,11 @@ import requests
 from googlesearch import search
 from bs4 import BeautifulSoup
 
-
+cwd = os.getcwd()
+os.chdir(cwd+'/websites')
 df = pd.read_excel("kmo's_Vlaanderen_2021.xlsx",usecols="B,C,D,E,L",sheet_name="Lijst")
 blacklist = ["trendstop","bizzy","linkedin","bloomberg","goudengids","cylex","companyweb","febev","openingsuren","facebook","vdab","eita","dnb","wikipedia","kompass","viamichelin"]
 counter=0
-
 for index,row in df.iterrows():
     if isinstance(row[4], float):
         for j in search(row[0], num_results=6):

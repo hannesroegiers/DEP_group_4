@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" class="h-max html">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap5.css">
+    <link rel="stylesheet" href="/static/index.css">
+    <title>Domeinen - Suor</title>
+</head>
+<body class="h-max html">
+    <main class="h-max aliceblue">
+        <div class="flex-start flex-container hoofding">
+            <h1 id="bold">SUOR -&nbsp;</h1>
+            <h1 id="bold">{{ title }}</h1>
+        </div>
+        <!--outline 2de <p> naar rechts-->
+        <hr>
+
+        <header>
+            <div class="ol-b bedrijf-titel" >
+                <p class="bedrijf-naam h3">{{ bedrijf[1] }}</p>
+            </div>
+        </header>
+        <section class="flex-container flex-around esg">
+            <article id="environmental">
+                <h2>Environmental</h2>
+                <div>
+                    <ul>
+                        {% for subdomein in subdomeinen["env"] %}
+                            <li class="subdomein">{{ subdomein[0] }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </article>
+            <article id="social">
+                <h2>Social</h2>
+                <div>
+                    <ul>
+                        {% for subdomein in subdomeinen["soc"] %}
+                            <li class="subdomein">{{ subdomein[0] }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </article>
+            <article id="governance">
+                <h2>Governance</h2>
+                <div>
+                    <ul>
+                        {% for subdomein in subdomeinen["gov"] %}
+                            <li class="subdomein">{{ subdomein[0] }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </article>
+        </section> 
+        <div class="">
+            <article id="scores">
+                <h2>scores</h2>
+                <div>
+                    <p>hier komt alle info over de scores en de scores zelf</p>
+                </div>
+            </article>
+        </div>
+    </main>
+</body>
+</html>
