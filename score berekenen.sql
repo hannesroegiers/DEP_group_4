@@ -12,3 +12,18 @@ from jaarverslag jv join kmo on jv.ondernemingsnummer = kmo.ondernemingsnummer,
 where query @@ ts_tekst
 order by rank desc
 limit 10;
+
+select ondernemingsnummer, ts_rank_cd(ts_tekst, query, 32) as rank, ts_rank_cd(ts_tekst, query) as rank2
+from jaarverslag jv, 
+	to_tsquery('dutch','(leven & land) | biodiversiteit | (leven & water)') query
+where query @@ ts_tekst
+order by rank desc
+limit 10;
+
+select ondernemingsnummer, ts_rank_cd(ts_tekst, query, 32) as rank
+	--ts_headline('dutch', tekst, query, 'MaxWords=10,MinWords=1,StartSel = [,StopSel = ],MaxFragments=10,FragmentDelimiter=...')
+from jaarverslag jv, 
+	to_tsquery('dutch','(lokale & gemeenschap) | (duurzame & steden & gemeenschappen) | (vrede)') query
+where query @@ ts_tekst
+order by rank desc
+limit 10;

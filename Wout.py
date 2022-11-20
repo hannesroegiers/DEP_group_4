@@ -1,6 +1,6 @@
 import pandas as pd
 
-from sqlalchemy import select, update
+from sqlalchemy import select, update, text, distinct
 from sqlalchemy import create_engine, func, Table, MetaData, desc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -119,7 +119,7 @@ def jaarverslag_tekst_toevoegen():
                     print(page.page_number, end='\t')
                     jaarverslag += page.extract_text()
 
-                kmo = pg_session.execute(
+                pg_session.execute(
                         update(PG_SME)
                         .where(PG_SME.ondernemingsnummer == ondernummer)
                         .values(tekst=jaarverslag)
@@ -174,6 +174,41 @@ def machinelearningdata_opvullen():
     
     pg_session.commit()
 
+def score_toevoegen():
+    class Score(pg_Base):  # each table is a subclass from the Base class
+        __table__ = pg_Base.metadata.tables['score']
+    class Termen(pg_Base):  # each table is a subclass from the Base class
+        __table__ = pg_Base.metadata.tables['termen']
+
+    subdomeinen = pg_session.execute(select(Termen.subdomein).distinct().order_by(Termen.subdomein))
+
+    for row in subdomeinen:
+        print(row.subdomein)
+        termen = pg_session.execute(select(Termen.zoekwoord, Termen.subdomein).where(Termen.subdomein == row.subdomein))
+        query = "(" + ") | (".join(list(
+                        map(
+                            lambda el : el.replace(' op het ', ' ')
+                                        .replace(' in het ', ' ')
+                                        .replace(' van ', ' ')
+                                        .replace(' en ', ' ')
+                                        .replace(' ', ' & ')
+                                        .replace('/',' | '), 
+                            list(termen.scalars().all())
+                        )
+                    )) + ")"
+        
+        # print(query)
+        rank_sql = pg_session.execute(text(f''' select ondernemingsnummer, ts_rank_cd(ts_tekst, query, 32) as rank
+                                    from jaarverslag jv, 
+	                                    to_tsquery('dutch','{query}') query
+                                    where query @@ ts_tekst
+                                    order by rank desc'''))
+        for score in rank_sql:
+            # print(f'ondernemingsnummer= {score[0]}, score= {score[1]}')
+            pg_score = Score(ondernemingsnummer= score[0], score=score[1], subdomein=row.subdomein)
+            pg_session.add(pg_score)
+        pg_session.commit()
+        
 
 
 
@@ -183,11 +218,13 @@ try:
 
     # kmo_opvullen()
 
-    jaarverslag_tekst_toevoegen()  
+    # jaarverslag_tekst_toevoegen()  
 
     # domeinen_toevoegen()
 
     # machinelearningdata_opvullen()
+
+    score_toevoegen()
 
 
 finally:    
