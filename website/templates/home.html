@@ -11,10 +11,10 @@
             <link rel="stylesheet" href="/static/index.css">
             <tr>
               <th>Ondernemingsnummer</th>
-              <th>Naam</th>
+              <th class="w-30">Naam</th>
               <th>website</th>
               <th>duurzaamheids-score</th>
-              <th>sector</th>
+              <th class="w-30">sector</th>
               <th>gemeente</th>
             </tr>
           </thead>
@@ -22,10 +22,18 @@
             {% for kmo in bedrijven %}
               <tr>
                   <td><a href= {{ jaarverslagen_url + kmo[0]|string }} target="_blank">{{ kmo[0] }}</a></td>
-                  <td><a href={{ url_for('bedrijf',ondernemingsnummer= kmo[0]) }} target="_blank">{{ kmo[1] }}</a></td>
-                  <td><a href="" target="_blank">{{ kmo[3] }}</a></td>
-                  <td>"komt later"</td>
-                  <td>{{ kmo[4] }}</td>
+                  <td class="w-30"><a href={{ url_for('bedrijf',ondernemingsnummer= kmo[0]) }} target="_blank">{{ kmo[1] }}</a></td>
+                  <td class="w-30">
+                    {% set url="https://"+kmo[3] %}
+                    {% if "/" in kmo[3] %}
+                      {% set website = kmo[3].split("/") %}
+                      <a href={{ url }} target="_blank">{{ website[0] }}</a>
+                    {% else %}
+                      <a href={{ url }} target="_blank">{{ kmo[3] }}</a>
+                    {% endif %}
+                  </td>
+                  <td>komt later</td>
+                  <td class="w-30">{{ kmo[4] }}</td>
                   <td>{{ kmo[5] }}</td>
               </tr>
             {% endfor %}
@@ -33,6 +41,7 @@
         </table>
       </div>
 {% endblock %}
+
 {% block scripts %}
   <script>
     $(document).ready(function () {
@@ -40,10 +49,10 @@
         columns: [
         {orderable: false, searchable: true},
         {orderable: true, searchable: true},
-        {orderable: false, searchable: false},
+        {orderable: false, searchable: true},
         {orderable: true, searchable: false},
         {orderable: true, searchable: true},
-         {orderable: true, searchable: true},]
+        {orderable: true, searchable: true},]
       });
     });
   </script>

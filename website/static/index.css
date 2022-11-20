@@ -29,6 +29,15 @@ a:hover{
     font-weight: bold;
 }
 
+th{
+    width: fit-content;
+}
+td,th{
+    text-align: center;
+    text-align: center;
+}
+
+
 .ol-r{
     border: 2px red solid;
 }
@@ -86,4 +95,7 @@ main{
     width: 90%;
     margin: 5rem auto 0;
     /* border: 2px solid green; */
+}
+.w-30{
+    width: calc(30%);
 }

@@ -41,7 +41,7 @@ def index():
     conn.close()
     cur.close()
     
-    return render_template('home.html',title="KMO's",bedrijven=kmos,jaarverslagen_url=jaarverslagen_url)
+    return render_template('home.html',title="KMO's",bedrijven=kmos,jaarverslagen_url=jaarverslagen_url,test="ikbenhann.es/nl")
 
 @app.route('/result/<ondernemingsnummer>',methods=['GET','POST'])
 def bedrijf(ondernemingsnummer):
