@@ -26,33 +26,34 @@
         <section class="flex-container flex-around esg">
             <article id="environmental">
                 <h2>Environmental</h2>
-                <div>
+                <a href="">
                     <ul>
                         {% for subdomein in subdomeinen["env"] %}
                             <li class="subdomein">{{ subdomein[0] }}</li>
                         {% endfor %}
                     </ul>
-                </div>
+                </a>
             </article>
             <article id="social">
                 <h2>Social</h2>
-                <div>
+                <a href="">
                     <ul>
                         {% for subdomein in subdomeinen["soc"] %}
                             <li class="subdomein">{{ subdomein[0] }}</li>
                         {% endfor %}
                     </ul>
-                </div>
+                </a>
             </article>
             <article id="governance">
                 <h2>Governance</h2>
-                <div>
+                <a href="www.google.com" target="_blank">
+                    
                     <ul>
                         {% for subdomein in subdomeinen["gov"] %}
                             <li class="subdomein">{{ subdomein[0] }}</li>
                         {% endfor %}
                     </ul>
-                </div>
+                </a>
             </article>
         </section> 
         <div class="">

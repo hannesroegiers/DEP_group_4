@@ -35,13 +35,15 @@ def index():
     jaarverslagen_url = "https://www.staatsbladmonitor.be/bedrijfsfiche.html?ondernemingsnummer=0"
     conn = get_deb_connection()
     cur = conn.cursor()
-    cur.execute('SELECT * FROM kmo')
+    # join_query = 'SELECT kmo.ondernemingsnummer,kmo.bedrijfsnaam,kmo.website,s.score,kmo.sector,kmo.gemeente FROM kmo LEFT JOIN score s ON s.ondernemingsnummer = kmo.ondernemingsnummer'
+    cur.execute('SELECT * FROM kmo')      
     kmos = cur.fetchall()
+    print(kmos[0])
 
     conn.close()
     cur.close()
     
-    return render_template('home.html',title="KMO's",bedrijven=kmos,jaarverslagen_url=jaarverslagen_url,test="ikbenhann.es/nl")
+    return render_template('home.html',title="KMO's",bedrijven=kmos,jaarverslagen_url=jaarverslagen_url)
 
 @app.route('/result/<ondernemingsnummer>',methods=['GET','POST'])
 def bedrijf(ondernemingsnummer):

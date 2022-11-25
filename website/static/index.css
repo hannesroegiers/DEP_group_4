@@ -26,7 +26,6 @@ a{
 }
 a:hover{
     text-decoration: underline;
-    font-weight: bold;
 }
 
 th{
@@ -52,24 +51,31 @@ main{
     margin: auto;
 }
 #environmental,#social,#governance{
-    width: 26%;
+    width: 27%;
 }
-#environmental>div,#social>div,#governance>div{
+#environmental>a,#social>a,#governance>a{
     border-radius: 2rem;
     height: 160px;
     padding: 1rem;    
     background-color: whitesmoke;
+    display: block;
+
+}
+#environmental>a:hover,#social>a:hover,#governance>a:hover{
+    text-decoration: none;
+    color: black;
+    border-width: 4px;
 }
 #environmental>h2,#social>h2,#governance>h2{
     text-align: center;
 }
-#environmental > div{
+#environmental > a{
     border: 2px solid green;
 }
-#social > div{
+#social > a{
     border: 2px solid red;
 }
-#governance > div{
+#governance > a{
     border: 2px solid #EFCC00;
 }
 
