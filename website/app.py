@@ -1,5 +1,6 @@
 import os
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import pdfplumber
 import psycopg2
@@ -31,19 +32,21 @@ db = SQLAlchemy(app)
 
 #flask routing
 @app.route('/')
+@app.route('/overzicht')
 def index():
     jaarverslagen_url = "https://www.staatsbladmonitor.be/bedrijfsfiche.html?ondernemingsnummer=0"
     conn = get_deb_connection()
     cur = conn.cursor()
     # join_query = 'SELECT kmo.ondernemingsnummer,kmo.bedrijfsnaam,kmo.website,s.score,kmo.sector,kmo.gemeente FROM kmo LEFT JOIN score s ON s.ondernemingsnummer = kmo.ondernemingsnummer'
-    cur.execute('SELECT * FROM kmo')      
+    # cur.execute('SELECT * FROM kmo')   
+    cur.execute('select kmo.ondernemingsnummer, bedrijfsnaam, w.url,sector,gemeente from kmo JOIN website w on w.ondernemingsnummer = kmo.ondernemingsnummer')   
     kmos = cur.fetchall()
     print(kmos[0])
 
     conn.close()
     cur.close()
     
-    return render_template('home.html',title="KMO's",bedrijven=kmos,jaarverslagen_url=jaarverslagen_url)
+    return render_template('home.html',title="SUOR - KMO's",bedrijven=kmos,jaarverslagen_url=jaarverslagen_url)
 
 @app.route('/result/<ondernemingsnummer>',methods=['GET','POST'])
 def bedrijf(ondernemingsnummer):
@@ -63,7 +66,34 @@ def bedrijf(ondernemingsnummer):
         "soc" : social_subdomeinen,
         "gov" : governance_subdomeinen
     }
-    return render_template('bedrijf.html',bedrijf=bedrijf,title="Domeinen",subdomeinen=subdomein_dict)
+    cur.execute(f"select bedrijfsnaam,adres, w.url,kmo.ondernemingsnummer,j.personeelsbestand,j.omzet, kmo.sector from kmo JOIN website w on w.ondernemingsnummer = kmo.ondernemingsnummer JOIN jaarverslag j on j.ondernemingsnummer = w.ondernemingsnummer WHERE j.ondernemingsnummer = {ondernemingsnummer}")
+    info = cur.fetchall()[0]
+
+    return render_template('bedrijf.html',bedrijf=bedrijf,title="SUOR - Domeinen",subdomeinen=subdomein_dict,info=info)
+
+
+@app.route('/sectoren')
+def sectoren():
+    # importing the required module
+
+    # x axis values
+    x = [1,2,3]
+    # corresponding y axis values
+    y = [2,4,1]
+
+    # plotting the points
+    plt.plot(x, y)
+
+    # naming the x axis
+    plt.xlabel('x - axis')
+    # naming the y axis
+    plt.ylabel('y - axis')
+
+    # giving a title to my graph
+    plt.title('My first graph!')
+
+
+    return render_template('sectoren.html',title="SUOR - Sectoren",graph=plt)
 
 if __name__ == '__main__':
     app.run(debug=True)

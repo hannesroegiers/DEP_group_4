@@ -11,9 +11,10 @@
 </head>
 <body class="h-max html">
     <main class="h-max aliceblue">
-        <div class="flex-start flex-container hoofding">
-            <h1 id="bold">SUOR -&nbsp;</h1>
-            <h1 id="bold">{{ title }}</h1>
+        <div class="flex-around flex-container navbar">
+            <h1>{{ title }}</h1>
+            <h1><a href={{ url_for('index') }}>Overzicht</a></h1>
+            <h1><a href={{ url_for('sectoren') }}>Sectoren</a></h1>
         </div>
         <!--outline 2de <p> naar rechts-->
         <hr>
@@ -26,36 +27,63 @@
         <section class="flex-container flex-around esg">
             <article id="environmental">
                 <h2>Environmental</h2>
-                <a href="">
+                <a>
                     <ul>
                         {% for subdomein in subdomeinen["env"] %}
-                            <li class="subdomein">{{ subdomein[0] }}</li>
+                        <li class="subdomein">{{ subdomein[0] }}</li>
                         {% endfor %}
                     </ul>
                 </a>
             </article>
             <article id="social">
                 <h2>Social</h2>
-                <a href="">
+                <a>
                     <ul>
                         {% for subdomein in subdomeinen["soc"] %}
-                            <li class="subdomein">{{ subdomein[0] }}</li>
+                        <li class="subdomein">{{ subdomein[0] }}</li>
                         {% endfor %}
                     </ul>
                 </a>
             </article>
             <article id="governance">
                 <h2>Governance</h2>
-                <a href="www.google.com" target="_blank">
+                <a>
                     
                     <ul>
                         {% for subdomein in subdomeinen["gov"] %}
-                            <li class="subdomein">{{ subdomein[0] }}</li>
+                        <li class="subdomein">{{ subdomein[0] }}</li>
                         {% endfor %}
                     </ul>
                 </a>
             </article>
         </section> 
+        <article class="info">
+            <h2>Algemene Info</h2>
+            <div>
+                <table id="data" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th class="w-20">Adres</th>
+                            <th >Website</th>
+                            <th>Personeel</th>
+                            <th>Omzet</th>
+                            <th>Sector</th>
+                            <th>Ondernemingsnummer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="info-tabel">
+                            <td>{{ info[1] }}</td=>
+                            <td><a href={{ info[2] }} target="_blank">{{ info[2] }}</a></td>
+                            <td>{{ info[4] }}</td>
+                            <td>{{ info[5] }}</td>
+                            <td>{{ info[6] }}</td>
+                            <td>{{ info[3] }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
         <div class="">
             <article id="scores">
                 <h2>scores</h2>

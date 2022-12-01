@@ -6,14 +6,15 @@
     <link rel="stylesheet" href="/static/index.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap5.css">
   </head>
-  <body class="">
-    <div class="container aliceblue">
-          <div class="flex-start flex-container">
-              <h1>Suor -&nbsp; </h1>
+  <body class="h-max">
+    <div class="container aliceblue h-max">
+          <div class="flex-around flex-container navbar">
               <h1>{{ title }}</h1>
+              <h1><a href={{ url_for('index') }}>Overzicht</a></h1>
+              <h1><a href={{ url_for('sectoren') }}>Sectoren</a></h1>
           </div>
-        <!--outline 2de <p> naar rechts-->
           <hr>
+        <!--outline 2de <p> naar rechts-->
 
       {% block content %}{% endblock %}
     </div>

@@ -4,7 +4,7 @@
 
     <!-- <h1>{% block title %} KMO's {% endblock %}</h1> -->
 
-    <div class="table-responsive">
+    <div class="table-responsive h-800">
         <table id="data" class="table  table-striped" >
           <thead>    
             <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,7 +12,6 @@
             <tr>
               <th>Ondernemingsnummer</th>
               <th class="w-30">Naam</th>
-              <th>website</th>
               <th>duurzaamheids-score</th>
               <th class="w-30">sector</th>
               <th>gemeente</th>
@@ -23,18 +22,9 @@
               <tr>
                   <td><a href= {{ jaarverslagen_url + kmo[0]|string }} target="_blank">{{ kmo[0] }}</a></td>
                   <td class="w-30"><a href={{ url_for('bedrijf',ondernemingsnummer= kmo[0]) }} target="_blank">{{ kmo[1] }}</a></td>
-                  <td class="w-30">
-                    {% set url="https://"+kmo[3] %}
-                    {% if "/" in kmo[3] %}
-                      {% set website = kmo[3].split("/") %}
-                      <a href={{ url }} target="_blank">{{ website[0] }}</a>
-                    {% else %}
-                      <a href={{ url }} target="_blank">{{ kmo[3] }}</a>
-                    {% endif %}
-                  </td>
                   <td>komt later</td>
-                  <td class="w-30">{{ kmo[4] }}</td>
-                  <td>{{ kmo[5] }}</td>
+                  <td class="w-30">{{ kmo[3] }}</td>
+                  <td>{{ kmo[4] }}</td>
               </tr>
             {% endfor %}
           </tbody>
@@ -49,7 +39,6 @@
         columns: [
         {orderable: false, searchable: true},
         {orderable: true, searchable: true},
-        {orderable: false, searchable: true},
         {orderable: true, searchable: false},
         {orderable: true, searchable: true},
         {orderable: true, searchable: true},]
