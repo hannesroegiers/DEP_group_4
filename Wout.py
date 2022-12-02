@@ -1,26 +1,38 @@
 import pandas as pd
+from selenium import webdriver
+import chromedriver_binary
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+import time
 
 from sqlalchemy import select, update, text, distinct
 from sqlalchemy import create_engine, func, Table, MetaData, desc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 import psycopg2
+
 import pdfplumber
 import os
+import requests
 
-# initialization of PostgreSQL stuff
-pg_engine = create_engine('postgresql://postgres:loldab123@vichogent.be:40031/durabilitysme')
-pg_conn = pg_engine.connect()
-metadata = MetaData(pg_engine)  
+def start_postgres():
+    # initialization of PostgreSQL stuff
+    global pg_engine
+    pg_engine = create_engine('postgresql://postgres:loldab123@vichogent.be:40031/durabilitysme')
+    global pg_conn
+    pg_conn = pg_engine.connect()
+    metadata = MetaData(pg_engine)  
 
-pg_Base = declarative_base(pg_engine) # initialize Base class
-pg_Base.metadata.reflect(pg_engine)   # get metadata from database
+    global pg_Base
+    pg_Base = declarative_base(pg_engine) # initialize Base class
+    pg_Base.metadata.reflect(pg_engine)   # get metadata from database
 
-Session = sessionmaker(bind=pg_engine)
-pg_session = Session()
+    Session = sessionmaker(bind=pg_engine)
+    global pg_session
+    pg_session = Session()
 
-# class PG_SME(pg_Base):  # each table is a subclass from the Base class
-#     __table__ = pg_Base.metadata.tables['jaarverslag']
+    # class PG_SME(pg_Base):  # each table is a subclass from the Base class
+    #     __table__ = pg_Base.metadata.tables['jaarverslag']
 
 
 def bepaalSector(nummer:int) -> str:
@@ -71,6 +83,7 @@ def bepaalSector(nummer:int) -> str:
         return f"WRONG CODE: {afdeling}"
 
 def kmo_opvullen():
+    start_postgres()
     class PG_SME(pg_Base):  # each table is a subclass from the Base class
         __table__ = pg_Base.metadata.tables['kmo']
 
@@ -87,6 +100,7 @@ def kmo_opvullen():
     pg_session.commit()
 
 def jaarverslag_opvullen():
+    start_postgres()
     class PG_SME(pg_Base):  # each table is a subclass from the Base class
         __table__ = pg_Base.metadata.tables['jaarverslag']
 
@@ -102,12 +116,12 @@ def jaarverslag_opvullen():
     
     pg_session.commit()
 
-def jaarverslag_tekst_toevoegen():
+def jaarverslag_tekst_toevoegen(directory:str):
+    start_postgres()
     class PG_SME(pg_Base):  # each table is a subclass from the Base class
         __table__ = pg_Base.metadata.tables['jaarverslag']
 
     # table jaarverslag tekst toevoegen
-    directory = 'PDF'
     for filename in os.listdir(directory):
         path = os.path.join(directory, filename)
         print(path)
@@ -131,6 +145,7 @@ def jaarverslag_tekst_toevoegen():
             pdf.close()
 
 def domeinen_toevoegen():
+    start_postgres()
     class PG_sub(pg_Base):  # each table is a subclass from the Base class
         __table__ = pg_Base.metadata.tables['subdomein']
     class PG_term(pg_Base):  # each table is a subclass from the Base class
@@ -159,6 +174,7 @@ def domeinen_toevoegen():
     pg_session.commit()
 
 def machinelearningdata_opvullen():
+    start_postgres()
     class PG_SME(pg_Base):  # each table is a subclass from the Base class
         __table__ = pg_Base.metadata.tables['machinelearningData']
 
@@ -175,6 +191,7 @@ def machinelearningdata_opvullen():
     pg_session.commit()
 
 def score_toevoegen():
+    start_postgres()
     class Score(pg_Base):  # each table is a subclass from the Base class
         __table__ = pg_Base.metadata.tables['score']
     class Termen(pg_Base):  # each table is a subclass from the Base class
@@ -208,7 +225,30 @@ def score_toevoegen():
             pg_score = Score(ondernemingsnummer= score[0], score=score[1], subdomein=row.subdomein)
             pg_session.add(pg_score)
         pg_session.commit()
-        
+
+def verzamel_jaarrekening():
+    start_postgres()
+    class Jaarverslag(pg_Base):
+        __table__ = pg_Base.metadata.tables['jaarverslag']
+    
+    jaarverslag_kmo = pg_session.execute(select(Jaarverslag.ondernemingsnummer).where(Jaarverslag.tekst == None))
+    kmo = jaarverslag_kmo.scalars().all()
+    
+    for ondnr in kmo:
+        driver = webdriver.Chrome()
+        driver.get('https://consult.cbso.nbb.be')
+        time.sleep(1)
+        ondernemingsnummerBox = driver.find_element(By.ID, "enterpriseNumber")
+        ondernemingsnummerBox.clear()
+        ondernemingsnummerBox.send_keys(f'0{ondnr}')
+        time.sleep(1)
+        ondernemingsnummerBox.send_keys(Keys.ENTER)
+        time.sleep(2)
+
+        driver.find_element(By.XPATH, '//button[@aria-label="Download pdf"]').send_keys(Keys.ENTER)
+        time.sleep(1)
+        driver.quit()
+        break
 
 
 
@@ -218,13 +258,15 @@ try:
 
     # kmo_opvullen()
 
-    # jaarverslag_tekst_toevoegen()  
+    # jaarverslag_tekst_toevoegen('PDF')  
 
     # domeinen_toevoegen()
 
     # machinelearningdata_opvullen()
 
-    score_toevoegen()
+    # score_toevoegen()
+
+    verzamel_jaarrekening()
 
 
 finally:    
