@@ -6,30 +6,30 @@ from sqlalchemy.ext.declarative import declarative_base
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from datetime import datetime
 import time
 
 def scrape_duurzame_websitetekst():
+    pg_engine = create_engine('postgresql://postgres:loldab123@vichogent.be:40031/durabilitysme')
+    pg_conn = pg_engine.connect()
+
+    pg_Base = declarative_base(pg_engine) # initialize Base class
+    pg_Base.metadata.reflect(pg_engine)   # get metadata from database
+
+    Session = sessionmaker(bind=pg_engine)
+    pg_session = Session()
+
+    options = webdriver.FirefoxOptions()
+    options.headless = True
+    ff_driver = webdriver.Firefox(options=options)
+
+    class Website(pg_Base):
+        __table__ = pg_Base.metadata.tables['website']
+
+    #TODO: querry aanpassen naar ondernemignsnummers die je moet overlopen!
+    db_entries = pg_session.query(Website.url, Website.jaar, Website.ondernemingsnummer)\
+        .where(Website.url != "geen", 425000000 < Website.ondernemingsnummer, Website.ondernemingsnummer <= 450000000)
     try:
-        pg_engine = create_engine('postgresql://postgres:loldab123@vichogent.be:40031/durabilitysme')
-        pg_conn = pg_engine.connect()
-
-        pg_Base = declarative_base(pg_engine) # initialize Base class
-        pg_Base.metadata.reflect(pg_engine)   # get metadata from database
-
-        Session = sessionmaker(bind=pg_engine)
-        pg_session = Session()
-
-        options = webdriver.FirefoxOptions()
-        options.headless = True
-        ff_driver = webdriver.Firefox(options=options)
-
-        class Website(pg_Base):
-            __table__ = pg_Base.metadata.tables['website']
-
-        #TODO: querry aanpassen naar ondernemignsnummers die je moet overlopen!
-        db_entries = pg_session.query(Website.url, Website.jaar, Website.ondernemingsnummer)\
-            .where(Website.url != "geen")
-
         for entry in db_entries:
             duurzaamheid_tekst = ""
             basis_url = '/'.join(entry.url.split("/")[0:3])
@@ -38,13 +38,14 @@ def scrape_duurzame_websitetekst():
                 ff_driver.get(url)
                 html = ff_driver.page_source
                 soup = BeautifulSoup(html, "lxml")
-                website_tekst = soup.text.strip()
+                b_lijst = soup.find_all('b')
+                website_tekst = "\n".join([x.get_text().strip() for x in b_lijst])
                 duurzaamheid_tekst += website_tekst
-            pg_session.execute(update(Website), [{Website.ondernemingsnummer: entry.ondernemingsnummer,
-                                                  Website.websitetekst: duurzaamheid_tekst}])
+            pg_session.query(Website)\
+                .filter(Website.ondernemingsnummer == entry.ondernemingsnummer)\
+                .update({Website.websitetekst: duurzaamheid_tekst})
+            pg_session.commit()
             print(duurzaamheid_tekst)
-    except Exception as e:
-        print(e)
     finally:
         pg_conn.close()
         pg_session.close()
@@ -56,15 +57,17 @@ def find_urls_duurzaamheid(start_url):
     doorzochte_url_lijst = set({})
     te_doorzoeken_urls = queue.Queue()
     te_doorzoeken_urls.put(start_url)
-    zoekwoorden = ["over", "ons", "rapport", "duurzaamheid", "rapportering", "duurzaam", "rapport"]
+    zoekwoorden = ["over", "rapport", "duurzaamheid", "rapportering", "duurzaam", "rapport"]
+    verboden_tags = ["/fr", "/en", "/de"]
     options = webdriver.FirefoxOptions()
     options.headless = True
     ff_driver = webdriver.Firefox(options=options)
+    timer = datetime.now().minute
     try:
-        while not te_doorzoeken_urls.empty():
+        while not te_doorzoeken_urls.empty() and not (timer - datetime.now().minute) % 60 >= 2:
             url = te_doorzoeken_urls.get(False)
             print("url doorzoeken: " + url)
-            while url in doorzochte_url_lijst:
+            while url in doorzochte_url_lijst or any(taal in url for taal in verboden_tags):
                 url = te_doorzoeken_urls.get(False)
                 print("duplicaat gevonden, volgende url: " + url)
                 print("te doorzoeken urls over: " + str(te_doorzoeken_urls.qsize()))
