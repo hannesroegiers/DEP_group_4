@@ -28,8 +28,13 @@ def scrape_duurzame_websitetekst():
 
     #TODO: querry aanpassen naar ondernemignsnummers die je moet overlopen!
     db_entries = pg_session.query(Website.url, Website.jaar, Website.ondernemingsnummer)\
-        .where(Website.url != "geen", 425000000 < Website.ondernemingsnummer, Website.ondernemingsnummer <= 450000000)
+        .where(Website.url != "geen",
+               Website.websitetekst != "",
+               425000000 < Website.ondernemingsnummer,
+               Website.ondernemingsnummer <= 450000000)\
+        .order_by(Website.ondernemingsnummer)
     try:
+
         for entry in db_entries:
             duurzaamheid_tekst = ""
             basis_url = '/'.join(entry.url.split("/")[0:3])
@@ -41,6 +46,8 @@ def scrape_duurzame_websitetekst():
                 b_lijst = soup.find_all('b')
                 website_tekst = "\n".join([x.get_text().strip() for x in b_lijst])
                 duurzaamheid_tekst += website_tekst
+            if duurzaamheid_tekst == "":
+                duurzaamheid_tekst = None
             pg_session.query(Website)\
                 .filter(Website.ondernemingsnummer == entry.ondernemingsnummer)\
                 .update({Website.websitetekst: duurzaamheid_tekst})
@@ -58,7 +65,7 @@ def find_urls_duurzaamheid(start_url):
     te_doorzoeken_urls = queue.Queue()
     te_doorzoeken_urls.put(start_url)
     zoekwoorden = ["over", "rapport", "duurzaamheid", "rapportering", "duurzaam", "rapport"]
-    verboden_tags = ["/fr", "/en", "/de"]
+    verboden_tags = ["/fr", "/en", "/de",]
     options = webdriver.FirefoxOptions()
     options.headless = True
     ff_driver = webdriver.Firefox(options=options)
