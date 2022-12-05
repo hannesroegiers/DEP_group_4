@@ -20,12 +20,20 @@
 .flex-around{
     justify-content: space-around;
 }
+.flex-between{
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+div.navbar>*{
+    color: #3F7D9D
+}
 
 html{
     height: 100%;
 }
 body{
-    min-height: 100vh;
+    min-height: fit-content;
 }
 
 a{
@@ -62,9 +70,9 @@ main{
     max-width: 1320px;
     margin: auto;
 }
-#environmental,#social,#governance{
+/* #environmental,#social,#governance{
     width: 27%;
-}
+} */
 #environmental>a,#social>a,#governance>a{
     border-radius: 2rem;
     height: 160px;
@@ -91,6 +99,10 @@ main{
     border: 2px solid #EFCC00;
 }
 
+#environmental,#social,#governance{
+    width: 45%;
+}
+
 .bedrijf-titel{
     width: 42%;
     margin: auto;
@@ -111,9 +123,8 @@ main{
     font-weight: bold;
 }
 article{
-    width: 90%;
     margin: 5rem auto 0;
-    /* border: 2px solid green; */
+    border: 2px solid green;
 }
 .w-30{
     width: calc(30%);

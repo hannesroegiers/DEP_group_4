@@ -13,32 +13,32 @@
     <main class="h-max aliceblue">
         <div class="flex-around flex-container navbar">
             <h3>{{ title }}</h3>
-            <h3><a href={{ url_for('index') }}>Overzicht</a></h3>
-            <h3><a href={{ url_for('sectoren') }}>Sectoren</a></h3>
+            <a href={{ url_for('index') }}><h3>Overzicht</h3></a>
+            <a href={{ url_for('sectoren') }}> <h3>Sectoren</h3></a>
         </div>
         <!--outline 2de <p> naar rechts-->
         <hr>
 
         <header>
             <div class="ol-b bedrijf-titel" >
-                <p class="bedrijf-naam h3">{{ info[0] }}</p>
+                <p class="bedrijf-naam h3">{{ info.bedrijfsnaam }}</p>
             </div>
         </header>
-        <div class="">
+        <!-- <div class="">
             <article id="scores">
                 <h2>Scores</h2>
                 <div>
                     <p>hier komt alle info over de scores en de scores zelf</p>
                 </div>
             </article>
-        </div>
-        <section class="flex-container flex-around esg">
+        </div> -->
+        <section class="flex-container flex-between">
             <article id="environmental">
-                <h2>Environmental</h2>
+                <h2>Environmental:</h2>
                 <a>
                     <ul>
                         {% for subdomein in subdomeinen["env"] %}
-                        <li class="subdomein">{{ subdomein[0] }}</li>
+                        <li class="subdomein">{{ subdomein.subdomein }}</li>
                         {% endfor %}
                     </ul>
                 </a>
@@ -48,7 +48,7 @@
                 <a>
                     <ul>
                         {% for subdomein in subdomeinen["soc"] %}
-                        <li class="subdomein">{{ subdomein[0] }}</li>
+                        <li class="subdomein">{{ subdomein.subdomein }}</li>
                         {% endfor %}
                     </ul>
                 </a>
@@ -59,12 +59,12 @@
                     
                     <ul>
                         {% for subdomein in subdomeinen["gov"] %}
-                        <li class="subdomein">{{ subdomein[0] }}</li>
+                        <li class="subdomein">{{ subdomein.subdomein }}</li>
                         {% endfor %}
                     </ul>
                 </a>
             </article>
-        </section> 
+        </section>
         <article class="info">
             <h2>Algemene Info</h2>
             <div>
@@ -81,13 +81,13 @@
                     </thead>
                     <tbody>
                         <tr class="info-tabel">
-                            <td>{{ info[1] }} {{ info[7] }}</td=>
-                            {% set list1 = info[2].split('/') %}
-                            <td><a href={{ info[2] }} target="_blank">{{ list1[2] }}</a></td>
-                            <td>{{ info[4] }}</td>
-                            <td>{{ info[5] }}</td>
-                            <td>{{ info[6] }}</td>
-                            <td>{{ info[3] }}</td>
+                            <td>{{ info.adres }} {{ info.gemeente }}</td>
+                            {% set list1 = info.url.split('/') %}
+                            <td><a href={{ info.url }} target="_blank">{{ list1[2] }}</a></td>
+                            <td>{{ info.personeelsbestand }}</td>
+                            <td>{{ info.omzet }}</td>
+                            <td>{{ info.sector }}</td>
+                            <td>{{ info.ondernemingsnummer }}</td>
                         </tr>
                     </tbody>
                 </table>

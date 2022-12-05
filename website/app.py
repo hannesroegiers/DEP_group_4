@@ -14,13 +14,35 @@ from sqlalchemy.orm import sessionmaker
 from sshtunnel import SSHTunnelForwarder
 
 # initialization database connection
-def get_deb_connection():
-    conn = psycopg2.connect(host='vichogent.be',
-                            database='durabilitysme',
-                            user='postgres',
-                            password='loldab123',
-                            port='40031')
-    return conn
+# def get_deb_connection():
+#     conn = psycopg2.connect(host='vichogent.be',
+#                             database='durabilitysme',
+#                             user='postgres',
+#                             password='loldab123',
+#                             port='40031')
+#     return conn
+
+# def get_deb_connection():
+
+
+#     return Session()
+
+def start_postgres():
+    # initialization of PostgreSQL stuff
+    global pg_engine
+    pg_engine = create_engine('postgresql://postgres:loldab123@vichogent.be:40031/durabilitysme')
+    global pg_conn
+    pg_conn = pg_engine.connect()
+    metadata = MetaData(pg_engine)  
+
+    global pg_Base
+    pg_Base = declarative_base(pg_engine) # initialize Base class
+    pg_Base.metadata.reflect(pg_engine)   # get metadata from database
+
+    Session = sessionmaker(bind=pg_engine)
+    global pg_session
+    pg_session = Session()
+
 
 
 #setting up flask app
@@ -34,41 +56,55 @@ db = SQLAlchemy(app)
 @app.route('/')
 @app.route('/overzicht')
 def index():
-    jaarverslagen_url = "https://www.staatsbladmonitor.be/bedrijfsfiche.html?ondernemingsnummer=0"
-    conn = get_deb_connection()
-    cur = conn.cursor()
-    # join_query = 'SELECT kmo.ondernemingsnummer,kmo.bedrijfsnaam,kmo.website,s.score,kmo.sector,kmo.gemeente FROM kmo LEFT JOIN score s ON s.ondernemingsnummer = kmo.ondernemingsnummer'
-    # cur.execute('SELECT * FROM kmo')   
-    cur.execute(f"select kmo.ondernemingsnummer, bedrijfsnaam, w.url,sector,gemeente from kmo JOIN website w on w.ondernemingsnummer = kmo.ondernemingsnummer WHERE w.url <> 'geen'")   
-    kmos = cur.fetchall()
-    print(kmos[0])
+    start_postgres()
+    class Kmo(pg_Base):
+        __table__ = pg_Base.metadata.tables['kmo']
+    class Website(pg_Base):
+        __table__ = pg_Base.metadata.tables['website']
 
-    conn.close()
-    cur.close()
+    jaarverslagen_url = "https://www.staatsbladmonitor.be/bedrijfsfiche.html?ondernemingsnummer=0"
+
+    kmos = pg_session.query(Kmo.ondernemingsnummer,Kmo.bedrijfsnaam,Website.url,Kmo.sector,Kmo.gemeente) \
+                        .join(Website) \
+                        .where(Website.url != 'geen')
+    print(kmos[0])
     
     return render_template('home.html',title="SUOR - KMO's",bedrijven=kmos,jaarverslagen_url=jaarverslagen_url)
 
 @app.route('/result/<ondernemingsnummer>',methods=['GET','POST'])
 def bedrijf(ondernemingsnummer):
+    start_postgres()
+    class Kmo(pg_Base):
+        __table__ = pg_Base.metadata.tables['kmo']
+    class Website(pg_Base):
+        __table__ = pg_Base.metadata.tables['website']
+    class Subdomein(pg_Base):
+        __table__ = pg_Base.metadata.tables['subdomein']
+    class Jaarverslag(pg_Base):
+        __table__ = pg_Base.metadata.tables['jaarverslag']
 
-    conn=get_deb_connection()
-    cur = conn.cursor()
-    cur.execute(f"SELECT * FROM subdomein where hoofddomein = 'Environment'")
-    environment_subdomeinen=cur.fetchall()
-    cur.execute(f"SELECT * FROM subdomein where hoofddomein = 'Social'")
-    social_subdomeinen=cur.fetchall()
-    cur.execute(f"SELECT * FROM subdomein where hoofddomein = 'Governance'")
-    governance_subdomeinen=cur.fetchall()
+    environment_subdomeinen=pg_session.query(Subdomein) \
+                                        .where(Subdomein.hoofddomein =='Environment')
+    social_subdomeinen=pg_session.query(Subdomein) \
+                                        .where(Subdomein.hoofddomein =='Social')
+    governance_subdomeinen=pg_session.query(Subdomein) \
+                                        .where(Subdomein.hoofddomein =='Governance')
     subdomein_dict = {
         "env": environment_subdomeinen,
         "soc" : social_subdomeinen,
         "gov" : governance_subdomeinen
     }
-    cur.execute(f"select bedrijfsnaam,adres, w.url,kmo.ondernemingsnummer,j.personeelsbestand,j.omzet, kmo.sector,kmo.gemeente from kmo JOIN website w on w.ondernemingsnummer = kmo.ondernemingsnummer JOIN jaarverslag j on j.ondernemingsnummer = w.ondernemingsnummer WHERE j.ondernemingsnummer = {ondernemingsnummer}")
-    info = cur.fetchall()[0]
     
+    info = pg_session.query(Kmo.bedrijfsnaam,Kmo.adres,Website.url,Kmo.ondernemingsnummer,Jaarverslag.personeelsbestand,Jaarverslag.omzet,Kmo.sector,Kmo.gemeente) \
+                        .join(Website) \
+                        .join(Jaarverslag) \
+                        .where(Jaarverslag.ondernemingsnummer == ondernemingsnummer)
+
+    for row in info:
+        print(row)
+        print(row.bedrijfsnaam)
     scores= ""
-    return render_template('bedrijf.html',title="SUOR - Domeinen",subdomeinen=subdomein_dict,info=info)
+    return render_template('bedrijf.html',title="SUOR - Domeinen",subdomeinen=subdomein_dict,info=info[0])
 
 
 @app.route('/sectoren')
