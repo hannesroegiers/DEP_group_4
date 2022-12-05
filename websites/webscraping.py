@@ -29,10 +29,9 @@ def scrape_duurzame_websitetekst():
     #TODO: querry aanpassen naar ondernemignsnummers die je moet overlopen!
     db_entries = pg_session.query(Website.url, Website.jaar, Website.ondernemingsnummer)\
         .where(Website.url != "geen",
-               Website.websitetekst != "",
+               Website.websitetekst == "",
                425000000 < Website.ondernemingsnummer,
-               Website.ondernemingsnummer <= 450000000)\
-        .order_by(Website.ondernemingsnummer)
+               Website.ondernemingsnummer <= 450000000)
     try:
 
         for entry in db_entries:
@@ -43,7 +42,7 @@ def scrape_duurzame_websitetekst():
                 ff_driver.get(url)
                 html = ff_driver.page_source
                 soup = BeautifulSoup(html, "lxml")
-                b_lijst = soup.find_all('b')
+                b_lijst = soup.find_all('p')
                 website_tekst = "\n".join([x.get_text().strip() for x in b_lijst])
                 duurzaamheid_tekst += website_tekst
             if duurzaamheid_tekst == "":
