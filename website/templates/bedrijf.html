@@ -34,7 +34,7 @@
         </div> -->
         <section class="flex-container flex-between">
             <article id="environmental">
-                <h2>Environmental:</h2>
+                <h2>Environmental: {{ "%.5f" | format(hoofddomeinscores["env"]) }}</h2>
                 <a>
                     <ul>
                         {% for subdomein in subdomeinen["env"] %}
@@ -44,7 +44,7 @@
                 </a>
             </article>
             <article id="social">
-                <h2>Social</h2>
+                <h2>Social: {{ "%.5f" | format(hoofddomeinscores["soc"]) }}</h2>
                 <a>
                     <ul>
                         {% for subdomein in subdomeinen["soc"] %}
@@ -54,7 +54,7 @@
                 </a>
             </article>
             <article id="governance">
-                <h2>Governance</h2>
+                <h2>Governance: {{ "%.5f" | format(hoofddomeinscores["gov"]) }}</h2>
                 <a>
                     
                     <ul>

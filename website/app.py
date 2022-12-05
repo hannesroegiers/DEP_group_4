@@ -82,6 +82,8 @@ def bedrijf(ondernemingsnummer):
         __table__ = pg_Base.metadata.tables['subdomein']
     class Jaarverslag(pg_Base):
         __table__ = pg_Base.metadata.tables['jaarverslag']
+    class Score(pg_Base):
+        __table__ = pg_Base.metadata.tables['score']
 
     environment_subdomeinen=pg_session.query(Subdomein) \
                                         .where(Subdomein.hoofddomein =='Environment')
@@ -89,22 +91,39 @@ def bedrijf(ondernemingsnummer):
                                         .where(Subdomein.hoofddomein =='Social')
     governance_subdomeinen=pg_session.query(Subdomein) \
                                         .where(Subdomein.hoofddomein =='Governance')
+    avg_hoofddomein_scores=pg_session.query(func.avg(Score.score).label('score'),Subdomein.hoofddomein) \
+                                        .join(Subdomein) \
+                                        .where(Score.ondernemingsnummer==ondernemingsnummer) \
+                                        .group_by(Subdomein.hoofddomein)
+    subdomein_scores=pg_session.query(Score.score,Score.subdomein) \
+                                        .join(Subdomein) \
+                                        .where(Score.ondernemingsnummer==ondernemingsnummer) 
+
+
+
     subdomein_dict = {
         "env": environment_subdomeinen,
         "soc" : social_subdomeinen,
         "gov" : governance_subdomeinen
     }
+
+    avg_hoofddomein_scores_dict={
+        "env" : float(avg_hoofddomein_scores[0].score),
+        "soc" : float(avg_hoofddomein_scores[1].score),
+        "gov" : float(avg_hoofddomein_scores[2].score)
+    }
+    print(avg_hoofddomein_scores_dict)
     
     info = pg_session.query(Kmo.bedrijfsnaam,Kmo.adres,Website.url,Kmo.ondernemingsnummer,Jaarverslag.personeelsbestand,Jaarverslag.omzet,Kmo.sector,Kmo.gemeente) \
                         .join(Website) \
                         .join(Jaarverslag) \
                         .where(Jaarverslag.ondernemingsnummer == ondernemingsnummer)
 
-    for row in info:
+    for row in subdomein_scores:
         print(row)
-        print(row.bedrijfsnaam)
+
     scores= ""
-    return render_template('bedrijf.html',title="SUOR - Domeinen",subdomeinen=subdomein_dict,info=info[0])
+    return render_template('bedrijf.html',title="SUOR - Domeinen",subdomeinen=subdomein_dict,info=info[0],hoofddomeinscores=avg_hoofddomein_scores_dict,subdomeinscores=subdomein_scores)
 
 
 @app.route('/sectoren')
