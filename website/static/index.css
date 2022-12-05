@@ -45,7 +45,9 @@ td{
 td,th{
     text-align: center;
 }
-
+hr{
+    margin: 0.5rem 0;
+}
 
 .ol-r{
     border: 2px red solid;

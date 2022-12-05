@@ -39,7 +39,7 @@ def index():
     cur = conn.cursor()
     # join_query = 'SELECT kmo.ondernemingsnummer,kmo.bedrijfsnaam,kmo.website,s.score,kmo.sector,kmo.gemeente FROM kmo LEFT JOIN score s ON s.ondernemingsnummer = kmo.ondernemingsnummer'
     # cur.execute('SELECT * FROM kmo')   
-    cur.execute('select kmo.ondernemingsnummer, bedrijfsnaam, w.url,sector,gemeente from kmo JOIN website w on w.ondernemingsnummer = kmo.ondernemingsnummer')   
+    cur.execute(f"select kmo.ondernemingsnummer, bedrijfsnaam, w.url,sector,gemeente from kmo JOIN website w on w.ondernemingsnummer = kmo.ondernemingsnummer WHERE w.url <> 'geen'")   
     kmos = cur.fetchall()
     print(kmos[0])
 
@@ -53,8 +53,6 @@ def bedrijf(ondernemingsnummer):
 
     conn=get_deb_connection()
     cur = conn.cursor()
-    cur.execute(f"SELECT * FROM kmo WHERE ondernemingsnummer = {ondernemingsnummer}")
-    bedrijf = cur.fetchone()
     cur.execute(f"SELECT * FROM subdomein where hoofddomein = 'Environment'")
     environment_subdomeinen=cur.fetchall()
     cur.execute(f"SELECT * FROM subdomein where hoofddomein = 'Social'")
@@ -66,10 +64,11 @@ def bedrijf(ondernemingsnummer):
         "soc" : social_subdomeinen,
         "gov" : governance_subdomeinen
     }
-    cur.execute(f"select bedrijfsnaam,adres, w.url,kmo.ondernemingsnummer,j.personeelsbestand,j.omzet, kmo.sector from kmo JOIN website w on w.ondernemingsnummer = kmo.ondernemingsnummer JOIN jaarverslag j on j.ondernemingsnummer = w.ondernemingsnummer WHERE j.ondernemingsnummer = {ondernemingsnummer}")
+    cur.execute(f"select bedrijfsnaam,adres, w.url,kmo.ondernemingsnummer,j.personeelsbestand,j.omzet, kmo.sector,kmo.gemeente from kmo JOIN website w on w.ondernemingsnummer = kmo.ondernemingsnummer JOIN jaarverslag j on j.ondernemingsnummer = w.ondernemingsnummer WHERE j.ondernemingsnummer = {ondernemingsnummer}")
     info = cur.fetchall()[0]
-
-    return render_template('bedrijf.html',bedrijf=bedrijf,title="SUOR - Domeinen",subdomeinen=subdomein_dict,info=info)
+    
+    scores= ""
+    return render_template('bedrijf.html',title="SUOR - Domeinen",subdomeinen=subdomein_dict,info=info)
 
 
 @app.route('/sectoren')

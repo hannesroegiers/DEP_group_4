@@ -12,18 +12,26 @@
 <body class="h-max html">
     <main class="h-max aliceblue">
         <div class="flex-around flex-container navbar">
-            <h1>{{ title }}</h1>
-            <h1><a href={{ url_for('index') }}>Overzicht</a></h1>
-            <h1><a href={{ url_for('sectoren') }}>Sectoren</a></h1>
+            <h3>{{ title }}</h3>
+            <h3><a href={{ url_for('index') }}>Overzicht</a></h3>
+            <h3><a href={{ url_for('sectoren') }}>Sectoren</a></h3>
         </div>
         <!--outline 2de <p> naar rechts-->
         <hr>
 
         <header>
             <div class="ol-b bedrijf-titel" >
-                <p class="bedrijf-naam h3">{{ bedrijf[1] }}</p>
+                <p class="bedrijf-naam h3">{{ info[0] }}</p>
             </div>
         </header>
+        <div class="">
+            <article id="scores">
+                <h2>Scores</h2>
+                <div>
+                    <p>hier komt alle info over de scores en de scores zelf</p>
+                </div>
+            </article>
+        </div>
         <section class="flex-container flex-around esg">
             <article id="environmental">
                 <h2>Environmental</h2>
@@ -63,7 +71,7 @@
                 <table id="data" class="table table-striped">
                     <thead>
                         <tr>
-                            <th class="w-20">Adres</th>
+                            <th>Adres</th>
                             <th >Website</th>
                             <th>Personeel</th>
                             <th>Omzet</th>
@@ -73,8 +81,9 @@
                     </thead>
                     <tbody>
                         <tr class="info-tabel">
-                            <td>{{ info[1] }}</td=>
-                            <td><a href={{ info[2] }} target="_blank">{{ info[2] }}</a></td>
+                            <td>{{ info[1] }} {{ info[7] }}</td=>
+                            {% set list1 = info[2].split('/') %}
+                            <td><a href={{ info[2] }} target="_blank">{{ list1[2] }}</a></td>
                             <td>{{ info[4] }}</td>
                             <td>{{ info[5] }}</td>
                             <td>{{ info[6] }}</td>
@@ -84,14 +93,7 @@
                 </table>
             </div>
         </article>
-        <div class="">
-            <article id="scores">
-                <h2>scores</h2>
-                <div>
-                    <p>hier komt alle info over de scores en de scores zelf</p>
-                </div>
-            </article>
-        </div>
+
     </main>
 </body>
 </html>
