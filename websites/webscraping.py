@@ -63,7 +63,7 @@ def find_urls_duurzaamheid(start_url):
     doorzochte_url_lijst = set({})
     te_doorzoeken_urls = queue.Queue()
     te_doorzoeken_urls.put(start_url)
-    zoekwoorden = ["/over", "/rapport", "/duurzaamheid", "/rapportering", "/duurzaam", "/rapport"]
+    zoekwoorden = ["/over", "/rapport", "/duurzaamheid", "/rapportering", "/duurzaam", "/rapport", "/about"]
     verboden_tags = ["/fr", "/en", "/de",]
     options = webdriver.FirefoxOptions()
     options.headless = True
