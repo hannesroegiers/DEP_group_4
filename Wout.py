@@ -266,6 +266,7 @@ def toevoegen_ts_vector():
     class Kmo(pg_Base):
         __table__ = pg_Base.metadata.tables['kmo']
     
+    print("Start query")
     tabel = pg_session.query(Jaarverslag.ondernemingsnummer, Jaarverslag.tekst, Website.websitetekst) \
             .join(Website, Jaarverslag.ondernemingsnummer == Website.ondernemingsnummer)
     for row in tabel:
