@@ -5,8 +5,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import time
 
-from sqlalchemy import select, update, text, distinct
+from sqlalchemy import select, update, text, join
 from sqlalchemy import create_engine, func, Table, MetaData, desc
+from sqlalchemy.sql import column
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 import psycopg2
@@ -256,7 +257,26 @@ def verzamel_jaarrekening():
         
     driver.quit()
 
-
+def toevoegen_ts_vector():
+    start_postgres()
+    class Jaarverslag(pg_Base):
+        __table__ = pg_Base.metadata.tables['jaarverslag']
+    class Website(pg_Base):
+        __table__ = pg_Base.metadata.tables['website']
+    class Kmo(pg_Base):
+        __table__ = pg_Base.metadata.tables['kmo']
+    
+    tabel = pg_session.query(Jaarverslag.ondernemingsnummer, Jaarverslag.tekst, Website.websitetekst) \
+            .join(Website, Jaarverslag.ondernemingsnummer == Website.ondernemingsnummer)
+    for row in tabel:
+        print(row.ondernemingsnummer)
+        complete_tekst = "\n".join([str(row.tekst), str(row.websitetekst)])
+        pg_session.execute(
+                        update(Kmo)
+                        .where(Kmo.ondernemingsnummer == row.ondernemingsnummer)
+                        .values(tekst=complete_tekst)
+                    )
+        pg_session.commit()
 
 try:
 
@@ -272,7 +292,9 @@ try:
 
     # score_toevoegen()
 
-    verzamel_jaarrekening()
+    # verzamel_jaarrekening()
+
+    toevoegen_ts_vector()
 
 
 finally:    
