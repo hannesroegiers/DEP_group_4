@@ -14,6 +14,7 @@ import psycopg2
 import pdfplumber
 import os
 import requests
+import re
 
 def start_postgres():
     # initialization of PostgreSQL stuff
@@ -116,7 +117,7 @@ def jaarverslag_opvullen():
     
     pg_session.commit()
 
-def jaarverslag_tekst_toevoegen(directory:str):
+def jaarverslag_tekst_toevoegen(directory, ondernummer):
     start_postgres()
     class PG_SME(pg_Base):  # each table is a subclass from the Base class
         __table__ = pg_Base.metadata.tables['jaarverslag']
@@ -124,8 +125,8 @@ def jaarverslag_tekst_toevoegen(directory:str):
     # table jaarverslag tekst toevoegen
     for filename in os.listdir(directory):
         path = os.path.join(directory, filename)
-        print(path)
-        ondernummer = (path.split('_')[1])
+        if ondernummer == None:
+            ondernummer = (path.strip('.pdf').split('-')[1])
         try:
             with pdfplumber.open(path) as pdf:
                 jaarverslag = ""
@@ -143,6 +144,7 @@ def jaarverslag_tekst_toevoegen(directory:str):
             None
         finally:
             pdf.close()
+        break
 
 def domeinen_toevoegen():
     start_postgres()
@@ -234,8 +236,8 @@ def verzamel_jaarrekening():
     jaarverslag_kmo = pg_session.execute(select(Jaarverslag.ondernemingsnummer).where(Jaarverslag.tekst == None))
     kmo = jaarverslag_kmo.scalars().all()
     
+    driver = webdriver.Chrome()
     for ondnr in kmo:
-        driver = webdriver.Chrome()
         driver.get('https://consult.cbso.nbb.be')
         time.sleep(1)
         ondernemingsnummerBox = driver.find_element(By.ID, "enterpriseNumber")
@@ -247,8 +249,12 @@ def verzamel_jaarrekening():
 
         driver.find_element(By.XPATH, '//button[@aria-label="Download pdf"]').send_keys(Keys.ENTER)
         time.sleep(1)
-        driver.quit()
-        break
+        jaarverslag_tekst_toevoegen(r'C:\Users\wout.boeykens\Downloads', ondnr)
+        for file in os.listdir('C:/Users/wout.boeykens/Downloads'):
+            print(f'removing C:/Users/wout.boeykens/Downloads/{file}')
+            os.remove(f'C:/Users/wout.boeykens/Downloads/{file}')
+        
+    driver.quit()
 
 
 

@@ -30,8 +30,7 @@ def scrape_duurzame_websitetekst():
     db_entries = pg_session.query(Website.url, Website.jaar, Website.ondernemingsnummer)\
         .where(Website.url != "geen",
                Website.websitetekst == "",
-               425000000 < Website.ondernemingsnummer,
-               Website.ondernemingsnummer <= 450000000)
+               550000000 < Website.ondernemingsnummer)
     try:
 
         for entry in db_entries:
