@@ -29,8 +29,6 @@ def start_postgres():
 #setting up flask app
 app = Flask(__name__)
 
-db = SQLAlchemy(app)
-
 #flask routing
 @app.route('/')
 @app.route('/overzicht')
