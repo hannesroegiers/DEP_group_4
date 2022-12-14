@@ -19,9 +19,9 @@ def scrape_duurzame_websitetekst():
     Session = sessionmaker(bind=pg_engine)
     pg_session = Session()
 
-    options = webdriver.FirefoxOptions()
+    options = webdriver.ChromeOptions()
     options.headless = True
-    ff_driver = webdriver.Firefox(options=options)
+    chrome_driver = webdriver.Chrome(options=options)
 
     class Website(pg_Base):
         __table__ = pg_Base.metadata.tables['website']
@@ -30,8 +30,7 @@ def scrape_duurzame_websitetekst():
     db_entries = pg_session.query(Website.url, Website.jaar, Website.ondernemingsnummer)\
         .where(Website.url != "geen",
                Website.websitetekst == "",
-               425000000 < Website.ondernemingsnummer,
-               Website.ondernemingsnummer <= 450000000)
+               550000000 < Website.ondernemingsnummer)
     try:
 
         for entry in db_entries:
@@ -39,8 +38,8 @@ def scrape_duurzame_websitetekst():
             basis_url = '/'.join(entry.url.split("/")[0:3])
             duurzaamheid_urls = find_urls_duurzaamheid(basis_url)
             for url in duurzaamheid_urls:
-                ff_driver.get(url)
-                html = ff_driver.page_source
+                chrome_driver.get(url)
+                html = chrome_driver.page_source
                 soup = BeautifulSoup(html, "lxml")
                 b_lijst = soup.find_all('p')
                 website_tekst = "\n".join([x.get_text().strip() for x in b_lijst])
@@ -63,11 +62,11 @@ def find_urls_duurzaamheid(start_url):
     doorzochte_url_lijst = set({})
     te_doorzoeken_urls = queue.Queue()
     te_doorzoeken_urls.put(start_url)
-    zoekwoorden = ["/over", "/rapport", "/duurzaamheid", "/rapportering", "/duurzaam", "/rapport"]
+    zoekwoorden = ["/over", "/rapport", "/duurzaamheid", "/rapportering", "/duurzaam", "/rapport", "/about"]
     verboden_tags = ["/fr", "/en", "/de",]
     options = webdriver.FirefoxOptions()
     options.headless = True
-    ff_driver = webdriver.Firefox(options=options)
+    chrome_driver = webdriver.Firefox(options=options)
     timer = datetime.now().minute
     try:
         while not te_doorzoeken_urls.empty() and not (timer - datetime.now().minute) % 60 >= 2:
@@ -77,9 +76,9 @@ def find_urls_duurzaamheid(start_url):
                 url = te_doorzoeken_urls.get(False)
                 print("duplicaat gevonden, volgende url: " + url)
                 print("te doorzoeken urls over: " + str(te_doorzoeken_urls.qsize()))
-            ff_driver.get(url)
+            chrome_driver.get(url)
             time.sleep(2)
-            web_element_lijst = ff_driver.find_elements(By.XPATH, "//a")
+            web_element_lijst = chrome_driver.find_elements(By.XPATH, "//a")
             for web_element in web_element_lijst:
                 sub_url = web_element.get_property("href")
                 if sub_url is not None and url in sub_url and "#" not in sub_url and sub_url not in doorzochte_url_lijst:
@@ -91,7 +90,7 @@ def find_urls_duurzaamheid(start_url):
     except queue.Empty:
         print("Queue leeg!")
     finally:
-        ff_driver.close()
+        chrome_driver.close()
         out = [url for url in doorzochte_url_lijst if any(woord in url for woord in zoekwoorden)]
         print("gevonden duurzame urls: " + ', '.join(out))
         duurzame_urls_file = open("duurzame_urls", "a")

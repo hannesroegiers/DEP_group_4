@@ -5,8 +5,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import time
 
-from sqlalchemy import select, update, text, distinct
+from sqlalchemy import select, update, text, join
 from sqlalchemy import create_engine, func, Table, MetaData, desc
+from sqlalchemy.sql import column
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 import psycopg2
@@ -14,6 +15,7 @@ import psycopg2
 import pdfplumber
 import os
 import requests
+import re
 
 def start_postgres():
     # initialization of PostgreSQL stuff
@@ -116,7 +118,7 @@ def jaarverslag_opvullen():
     
     pg_session.commit()
 
-def jaarverslag_tekst_toevoegen(directory:str):
+def jaarverslag_tekst_toevoegen(directory, ondernummer):
     start_postgres()
     class PG_SME(pg_Base):  # each table is a subclass from the Base class
         __table__ = pg_Base.metadata.tables['jaarverslag']
@@ -124,8 +126,8 @@ def jaarverslag_tekst_toevoegen(directory:str):
     # table jaarverslag tekst toevoegen
     for filename in os.listdir(directory):
         path = os.path.join(directory, filename)
-        print(path)
-        ondernummer = (path.split('_')[1])
+        if ondernummer == None:
+            ondernummer = (path.strip('.pdf').split('-')[1])
         try:
             with pdfplumber.open(path) as pdf:
                 jaarverslag = ""
@@ -143,6 +145,7 @@ def jaarverslag_tekst_toevoegen(directory:str):
             None
         finally:
             pdf.close()
+        break
 
 def domeinen_toevoegen():
     start_postgres()
@@ -234,8 +237,8 @@ def verzamel_jaarrekening():
     jaarverslag_kmo = pg_session.execute(select(Jaarverslag.ondernemingsnummer).where(Jaarverslag.tekst == None))
     kmo = jaarverslag_kmo.scalars().all()
     
+    driver = webdriver.Chrome()
     for ondnr in kmo:
-        driver = webdriver.Chrome()
         driver.get('https://consult.cbso.nbb.be')
         time.sleep(1)
         ondernemingsnummerBox = driver.find_element(By.ID, "enterpriseNumber")
@@ -247,10 +250,34 @@ def verzamel_jaarrekening():
 
         driver.find_element(By.XPATH, '//button[@aria-label="Download pdf"]').send_keys(Keys.ENTER)
         time.sleep(1)
-        driver.quit()
-        break
+        jaarverslag_tekst_toevoegen(r'C:\Users\wout.boeykens\Downloads', ondnr)
+        for file in os.listdir('C:/Users/wout.boeykens/Downloads'):
+            print(f'removing C:/Users/wout.boeykens/Downloads/{file}')
+            os.remove(f'C:/Users/wout.boeykens/Downloads/{file}')
+        
+    driver.quit()
 
-
+def toevoegen_ts_vector():
+    start_postgres()
+    class Jaarverslag(pg_Base):
+        __table__ = pg_Base.metadata.tables['jaarverslag']
+    class Website(pg_Base):
+        __table__ = pg_Base.metadata.tables['website']
+    class Kmo(pg_Base):
+        __table__ = pg_Base.metadata.tables['kmo']
+    
+    print("Start query")
+    tabel = pg_session.query(Jaarverslag.ondernemingsnummer, Jaarverslag.tekst, Website.websitetekst) \
+            .join(Website, Jaarverslag.ondernemingsnummer == Website.ondernemingsnummer)
+    for row in tabel:
+        print(row.ondernemingsnummer)
+        complete_tekst = "\n".join([str(row.tekst), str(row.websitetekst)])
+        pg_session.execute(
+                        update(Kmo)
+                        .where(Kmo.ondernemingsnummer == row.ondernemingsnummer)
+                        .values(tekst=complete_tekst)
+                    )
+        pg_session.commit()
 
 try:
 
@@ -266,7 +293,9 @@ try:
 
     # score_toevoegen()
 
-    verzamel_jaarrekening()
+    # verzamel_jaarrekening()
+
+    toevoegen_ts_vector()
 
 
 finally:    
