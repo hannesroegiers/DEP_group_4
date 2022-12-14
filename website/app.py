@@ -1,31 +1,12 @@
-import os
-
 import matplotlib.pyplot as plt
-import pandas as pd
-import pdfplumber
-import psycopg2
-import sshtunnel
-from flask import Flask, render_template, request
+
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import (ForeignKey, MetaData, Table, create_engine, desc, func,
                         select, update)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sshtunnel import SSHTunnelForwarder
 
-# initialization database connection
-# def get_deb_connection():
-#     conn = psycopg2.connect(host='vichogent.be',
-#                             database='durabilitysme',
-#                             user='postgres',
-#                             password='loldab123',
-#                             port='40031')
-#     return conn
-
-# def get_deb_connection():
-
-
-#     return Session()
 
 def start_postgres():
     # initialization of PostgreSQL stuff
@@ -49,8 +30,6 @@ def start_postgres():
 app = Flask(__name__)
 
 db = SQLAlchemy(app)
-
-
 
 #flask routing
 @app.route('/')
@@ -98,7 +77,7 @@ def bedrijf(ondernemingsnummer):
     subdomein_scores=pg_session.query(Score.score,Score.subdomein) \
                                         .join(Subdomein) \
                                         .where(Score.ondernemingsnummer==ondernemingsnummer) 
-
+    
 
 
     subdomein_dict = {
@@ -106,7 +85,9 @@ def bedrijf(ondernemingsnummer):
         "soc" : social_subdomeinen,
         "gov" : governance_subdomeinen
     }
-
+    print(f"environment subs: {environment_subdomeinen}")
+    print(subdomein_dict)
+    print(avg_hoofddomein_scores)
     avg_hoofddomein_scores_dict={
         "env" : float(avg_hoofddomein_scores[0].score),
         "soc" : float(avg_hoofddomein_scores[1].score),
@@ -119,8 +100,12 @@ def bedrijf(ondernemingsnummer):
                         .join(Jaarverslag) \
                         .where(Jaarverslag.ondernemingsnummer == ondernemingsnummer)
 
-    for row in subdomein_scores:
-        print(row)
+    # for row in subdomein_scores:
+    #     if row.subdomein == 'biodiversity':
+    #         print(row.score)
+    subdomein_scores_dict = {
+        subdomein_dict['env']
+    }
 
     scores= ""
     return render_template('bedrijf.html',title="SUOR - Domeinen",subdomeinen=subdomein_dict,info=info[0],hoofddomeinscores=avg_hoofddomein_scores_dict,subdomeinscores=subdomein_scores)
