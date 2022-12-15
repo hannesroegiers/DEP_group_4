@@ -202,6 +202,10 @@ def score_toevoegen():
 
     subdomeinen = pg_session.execute(select(Termen.subdomein).distinct().order_by(Termen.subdomein))
 
+    #delete alle scores
+    pg_session.query(Score).delete()
+    pg_session.commit()
+
     for row in subdomeinen:
         print(row.subdomein)
         termen = pg_session.execute(select(Termen.zoekwoord, Termen.subdomein).where(Termen.subdomein == row.subdomein))
@@ -219,7 +223,7 @@ def score_toevoegen():
         
         # print(query)
         rank_sql = pg_session.execute(text(f''' select ondernemingsnummer, ts_rank_cd(ts_tekst, query, 32) as rank
-                                    from jaarverslag jv, 
+                                    from kmo, 
 	                                    to_tsquery('dutch','{query}') query
                                     where query @@ ts_tekst
                                     order by rank desc'''))
@@ -291,11 +295,11 @@ try:
 
     # machinelearningdata_opvullen()
 
-    # score_toevoegen()
+    score_toevoegen()
 
     # verzamel_jaarrekening()
 
-    toevoegen_ts_vector()
+    # toevoegen_ts_vector()
 
 
 finally:    
