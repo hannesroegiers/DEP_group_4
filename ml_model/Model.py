@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import tensorflow
 from tensorflow import keras
-import matplotlib as mpl
+import matplotlib.pyplot as plt
 
 from sqlalchemy import select, update, text, join
 from sqlalchemy import create_engine, func, Table, MetaData, desc
@@ -65,10 +65,13 @@ try:
 
     #jaartallen groeper per 10 jaar
     # jaar gaat beter functioneren als een classificatie dan als een getal
-    X['jaarGroep'] = df['oprichtingsjaar'].apply(lambda x: x//10)
+    X['jaarGroep'] = df['oprichtingsjaar'].apply(lambda x: (x//5)/2)
 
     print(X.head(5))
     print(y.head(5))
+    print(X['jaarGroep'].value_counts())
+
+    plt.plot(X['jaarGroep'].value_counts())
 
     # STAP 4: selecteer, train en evalueer (grid search cross-validation (CV) of randomnized search CV) het model
 
