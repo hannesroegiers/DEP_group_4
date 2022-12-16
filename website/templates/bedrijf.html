@@ -32,6 +32,28 @@
                 </div>
             </article>
         </div> -->
+        <section class="container">
+            <div class="row">
+                {% for hoofddomein in hoofddomeinen %}
+                <table class="col-sm">
+                    <tr>
+                        <th>{{ hoofddomeinen[hoofddomein] }}</th>
+                        <th>Score</th>
+                    </tr>
+                    <tr>
+                        <td>Gemiddelde</td>
+                        <td>{{"%.5f" | format(hoofddomeinscores[hoofddomein]) }}</td>
+                    </tr>
+                    {% for subdomein in domeinmapper[hoofddomeinen[hoofddomein]] %}
+                    </tr>
+                        <td>{{ subdomein }}</td>
+                        <td>{{ "%.5f" | format(score_subdomeinmapper[subdomein]) }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% endfor %}
+            </div>
+        </section>
         <section class="flex-container flex-between">
             <article id="environmental">
                 <h2>Environmental: {{ "%.5f" | format(hoofddomeinscores["env"]) }}</h2>

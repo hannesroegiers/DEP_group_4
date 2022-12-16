@@ -62,6 +62,8 @@ def bedrijf(ondernemingsnummer):
     class Score(pg_Base):
         __table__ = pg_Base.metadata.tables['score']
 
+
+
     environment_subdomeinen=pg_session.query(Subdomein) \
                                         .where(Subdomein.hoofddomein =='Environment')
     social_subdomeinen=pg_session.query(Subdomein) \
@@ -72,10 +74,25 @@ def bedrijf(ondernemingsnummer):
                                         .join(Subdomein) \
                                         .where(Score.ondernemingsnummer==ondernemingsnummer) \
                                         .group_by(Subdomein.hoofddomein)
-    subdomein_scores=pg_session.query(Score.score,Score.subdomein) \
+    subdomein_scores=pg_session.query(Score.score, Score.subdomein, Subdomein.hoofddomein) \
                                         .join(Subdomein) \
-                                        .where(Score.ondernemingsnummer==ondernemingsnummer) 
-    
+                                        .where(Score.ondernemingsnummer==ondernemingsnummer,
+                                               Score.subdomein == Subdomein.subdomein)
+    subdomein_unique=pg_session.query(Subdomein.subdomein, Subdomein.hoofddomein).distinct()
+    hoofddomein_unique=pg_session.query(Subdomein.hoofddomein).distinct()
+
+    subdomein_score_dict = {}
+    for entry in subdomein_scores:
+        subdomein_score_dict[entry.subdomein] = entry.score
+
+    domeinen_dict = {}
+    for hoofddomein in hoofddomein_unique:
+        domeinlijst = []
+        for subdomein in subdomein_unique:
+            if hoofddomein.hoofddomein == subdomein.hoofddomein:
+                domeinlijst.append(subdomein.subdomein)
+        domeinen_dict[hoofddomein.hoofddomein] = domeinlijst
+    print("domeindict: " + str(domeinen_dict))
 
 
     subdomein_dict = {
@@ -83,6 +100,9 @@ def bedrijf(ondernemingsnummer):
         "soc" : social_subdomeinen,
         "gov" : governance_subdomeinen
     }
+
+
+
     print(f"environment subs: {environment_subdomeinen}")
     print(subdomein_dict)
     print(avg_hoofddomein_scores)
@@ -91,6 +111,7 @@ def bedrijf(ondernemingsnummer):
         "soc" : float(avg_hoofddomein_scores[1].score),
         "gov" : float(avg_hoofddomein_scores[2].score)
     }
+    hoofddomein_set = {"env": "Environment", "soc": "Social", "gov": "Governance"}
     print(avg_hoofddomein_scores_dict)
     
     info = pg_session.query(Kmo.bedrijfsnaam,Kmo.adres,Website.url,Kmo.ondernemingsnummer,Jaarverslag.personeelsbestand,Jaarverslag.omzet,Kmo.sector,Kmo.gemeente) \
@@ -106,7 +127,14 @@ def bedrijf(ondernemingsnummer):
     }
 
     scores= ""
-    return render_template('bedrijf.html',title="SUOR - Domeinen",subdomeinen=subdomein_dict,info=info[0],hoofddomeinscores=avg_hoofddomein_scores_dict,subdomeinscores=subdomein_scores)
+    return render_template('bedrijf.html',title="SUOR - Domeinen"
+                           ,subdomeinen=subdomein_dict,
+                           info=info[0],
+                           hoofddomeinscores=avg_hoofddomein_scores_dict,
+                           subdomeinscores=subdomein_scores,
+                           hoofddomeinen=hoofddomein_set,
+                           domeinmapper=domeinen_dict,
+                           score_subdomeinmapper=subdomein_score_dict)
 
 
 @app.route('/sectoren')
