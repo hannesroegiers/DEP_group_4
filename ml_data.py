@@ -14,6 +14,9 @@ from bs4 import BeautifulSoup
 import time
 import numpy as np
 import cloudscraper
+import geopandas as gpd
+import matplotlib.pyplot as plt
+
 
 scraper = cloudscraper.create_scraper()
 
@@ -27,6 +30,82 @@ pg_Base.metadata.reflect(pg_engine)   # get metadata from database
 
 Session = sessionmaker(bind=pg_engine)
 pg_session = Session()
+
+def omzet_winst_scrape(ondernemingsnummer):
+    ondernemingsnummer = int(ondernemingsnummer)
+    url = "https://www.companyweb.be/nl/"+str(ondernemingsnummer)
+    page = requests.get(url)
+    soup = BeautifulSoup(page.text, 'lxml')
+    table = soup.find('table')
+    omzet = table.find_all(text= True)
+    omzet_new = []
+    for item in omzet:
+        if "\n" not in item:
+            omzet_new.append(item)
+    print(omzet_new)
+    print(len(omzet_new))
+    # Case: winst is niet meegegeven, tweede rij is streepje - -
+    if  omzet_new[7] == '-':
+        omzet = omzet_new[0]
+        omzet = omzet[2:]
+        real_omzet = omzet.replace('.', '')
+        real_omzet = int(real_omzet)
+        real_omzet = round(real_omzet/1000)    
+    
+        winst = 0
+        return real_omzet, winst
+    if omzet_new[0] == 'Type':
+        return 0, 0
+
+    # Case: eerste rij (omzet) zijn streepjes - - - - - -
+    if omzet_new[0] == '-':
+        real_omzet = 0
+        winst = omzet_new[7]
+        winst = winst[2:]
+        winst = winst.replace('.', '')
+        winst = int(winst)
+        winst = round(winst/1000)
+        return real_omzet, winst
+
+    # Case: eerste rij is winst: dus lengte van array is 27
+    if len(omzet_new) == 27:
+        real_omzet = 0
+        winst = omzet_new[0]
+        winst = winst[2:]
+        winst = winst.replace('.', '')
+        winst = int(winst)
+        winst = round(winst/1000)
+        return real_omzet, winst
+
+    # Case: eerste kolom is niet beschikbaar
+    if len(omzet_new) == 11 or len(omzet_new) == 14:
+        omzet = omzet_new[0]
+        omzet = omzet[2:]
+        real_omzet = omzet.replace('.', '')
+        real_omzet = int(real_omzet)
+        real_omzet = round(real_omzet/1000)
+
+        winst = omzet_new[3]
+        winst = winst[2:]
+        winst = winst.replace('.', '')
+        winst = int(winst)
+        winst = round(winst/1000)
+        return real_omzet, winst
+    # Case: alle data is beschikbaar
+    omzet = omzet_new[0]
+    omzet = omzet[2:]
+    real_omzet = omzet.replace('.', '')
+    real_omzet = int(real_omzet)
+    real_omzet = round(real_omzet/1000)
+
+    winst = omzet_new[7]
+    winst = winst[2:]
+    winst = winst.replace('.', '')
+    winst = int(winst)
+    winst = round(winst/1000)
+
+    return real_omzet, winst
+
 
 def machinelearningdata_opvullen():
     class PG_SME(pg_Base):  # each table is a subclass from the Base class
@@ -209,13 +288,217 @@ def clean_up_gemeentes():
         print("done")
         pg_session.commit()
 
+def geef_provincie_frame():
+    url = "https://www.metatopos.eu/belgcombiN.html"
+    page = requests.get(url)
+    soup = BeautifulSoup(page.text, 'lxml')
+    table = soup.find_all('table')
+    df = pd.read_html(str(table))[0]
+
+    df.drop(
+        labels=[0],
+        axis=0,
+        inplace=True
+    )
+
+    df.drop(
+        labels=[3,4,5,6],
+        axis=1,
+        inplace=True
+    )
+
+    df.rename(columns = {0 :'Postcode'}, inplace = True)
+    df.rename(columns = {1: 'Gemeente'}, inplace = True)
+    df.rename(columns = {2: 'Deelgemeente' }, inplace = True)
+    
+    df['Deelgemeente'] = df['Deelgemeente'].fillna(0)
+    deelgemeenten = []
+    for i in range(len(df)):
+        if df.iloc[i,2] == 0:
+            df.iloc[i,2] = df.iloc[i,1]
+    return df
+
+def geef_gemeente(df, postcode): 
+  return df[df.iloc[:, 0] == postcode].iloc[0, 1]
+
+def opvullen_alle_gemeenten():
+    class PG_SME(pg_Base):
+        __table__ = pg_Base.metadata.tables['gemeente']
+    
+    xl_file = pd.read_excel("DEP_group_4/websites/kmo's_Vlaanderen_2021.xlsx", sheet_name= "Lijst")
+    xl_file = xl_file.sort_values('Postcode')
+
+    dataframe = geef_provincie_frame()
+    
+
+    for rij in xl_file.values:
+        deelgemeente = rij[2]
+        postcode = int(rij[8])
+
+        print(" ")
+        print("Postcode in behandeling: " + str(postcode) + " Deelgemeente: " + deelgemeente)
+        
+        if postcode == 1931:
+            gemeente = 'Machelen'
+            pg_session.execute(
+                        update(PG_SME)
+                        .where(PG_SME.deelgemeente == deelgemeente)
+                        .values(gemeente=gemeente)
+                    )
+            continue
+        if postcode == 9950 or postcode == 9930:
+            gemeente = 'Lievegem'
+            pg_session.execute(
+                        update(PG_SME)
+                        .where(PG_SME.deelgemeente == deelgemeente)
+                        .values(gemeente=gemeente)
+                    )
+            continue
+        if postcode == 9770 or postcode == 9750:
+            gemeente = 'Kruisem'
+            pg_session.execute(
+                        update(PG_SME)
+                        .where(PG_SME.deelgemeente == deelgemeente)
+                        .values(gemeente=gemeente)
+                    )
+            continue
+        try:
+
+            gemeente = geef_gemeente(dataframe, str(postcode))
+
+            print("Postcode: " + str(postcode) + " Gemeente: " + str(gemeente))
+        
+#            pg_session.add(PG_SME(deelgemeente=deelgemeente, provincie=provincie, provinciehoofdstad=provinciehoofdstad, postcode=postcode))
+            pg_session.execute(
+                        update(PG_SME)
+                        .where(PG_SME.deelgemeente == deelgemeente)
+                        .values(gemeente=gemeente)
+                    )
+            print("Postcode afgehandeld ")
+        except exc.SQLAlchemyError as e:
+            pg_session.rollback()
+        pg_session.commit()
+
+def geef_verstedelijking(filename):
+    df = pd.read_csv('GSM_ranking_register_provincie.csv')
+
+    # Alleen data van 2021
+    # Alleen data van gemeentes met meer dan 5000 en minder dan 100.000 inwoners
+    df = df[df['Jaar'] >= 2020]
+
+    # Verwijderen irrelevante groepen (min, max, gem, groepering)
+    df = df.drop('Gemeentegrootte', axis = 1)
+    df = df.drop('Waarde Vlaams Gewest', axis = 1)
+    df = df.drop('Minimum Vlaams Gewest', axis = 1)
+    df = df.drop('Maximum Vlaams Gewest', axis = 1)
+    df = df.drop('Minimum provincie', axis = 1)
+    df = df.drop('Maximum provincie', axis=1)
+    df = df.drop('Thema', axis=1)
+    df = df.drop('Provincie', axis = 1)
+    df = df.drop('Waarde provincie', axis = 1)
+    df = df.drop('Rangschikking', axis = 1)
+
+
+    bebouwingsgraad = df[df['Indicator'] == 'RU01: Bebouwingsgraad']
+    bebouwingsgraad = bebouwingsgraad[bebouwingsgraad['Jaar'] == 2020]
+    bebouwingsgraad = bebouwingsgraad.drop('Indicator', axis=1)
+
+    print("Bebouwingsgraad:")
+    print(bebouwingsgraad)
+
+    shapefile = gpd.read_file(filename)
+
+    return shapefile
+    #lu_vrl_vlaa_2013.shp
+def geef_verstedelijkingsgraad():
+    df = pd.read_csv('GSM_ranking_register_provincie.csv')
+
+    # Alleen data van 2020
+    # Alleen data van gemeentes met meer dan 5000 en minder dan 100.000 inwoners
+    df = df[df['Jaar'] >= 2020]
+
+    # Verwijderen irrelevante groepen (min, max, gem, groepering)
+    df = df.drop('Gemeentegrootte', axis = 1)
+    df = df.drop('Waarde Vlaams Gewest', axis = 1)
+    df = df.drop('Minimum Vlaams Gewest', axis = 1)
+    df = df.drop('Maximum Vlaams Gewest', axis = 1)
+    df = df.drop('Minimum provincie', axis = 1)
+    df = df.drop('Maximum provincie', axis=1)
+    df = df.drop('Thema', axis=1)
+    df = df.drop('Provincie', axis = 1)
+    df = df.drop('Waarde provincie', axis = 1)
+    df = df.drop('Rangschikking', axis = 1)
+
+    bebouwingsgraad = df[df['Indicator'] == 'RU01: Bebouwingsgraad']
+    bebouwingsgraad = bebouwingsgraad[bebouwingsgraad['Jaar'] == 2020]
+    bebouwingsgraad = bebouwingsgraad.drop('Indicator', axis=1)
+    bebouwingsgraad = bebouwingsgraad.drop('Jaar', axis=1)
+    bebouwingsgraad = bebouwingsgraad.drop('Inwoners', axis=1)
+    print("Bebouwingsgraad:")
+    print(bebouwingsgraad)
+
+    return bebouwingsgraad
+
+def opvullen_alle_verstedelijkingsgraden():
+    class PG_SME(pg_Base):
+        __table__ = pg_Base.metadata.tables['gemeente']
+    
+    verstedelijkingsgraden = geef_verstedelijkingsgraad()
+
+
+    for rij in verstedelijkingsgraden.values:
+        print(rij)
+        gemeente = rij[0]
+        verstedelijkingsgraad = rij[1]
+        print(" ")
+        print("Gemeente in behandeling: " + str(gemeente) + " Verstedelijkingsgraad: " + str(verstedelijkingsgraad))
+        
+        try:
+            pg_session.execute(
+                        update(PG_SME)
+                        .where(PG_SME.gemeente == gemeente)
+                        .values(verstedelijkingsgraad=verstedelijkingsgraad)
+                    )
+
+            print("Postcode afgehandeld ")
+        except exc.SQLAlchemyError as e:
+            pg_session.rollback()
+        pg_session.commit()
+
+def opvullen_winst_omzet_machinelearningdata():
+    class PG_SME(pg_Base):  # each table is a subclass from the Base class
+        __table__ = pg_Base.metadata.tables['machinelearningData']
+
+    ondernemingsnummers = pg_session.query(PG_SME.ondernemingsnummer).where(PG_SME.winst == None)
+
+    for rij in ondernemingsnummers:
+        ondernemingsnummer = rij.ondernemingsnummer
+        print(ondernemingsnummer)
+
+        omzet, winst = omzet_winst_scrape(ondernemingsnummer)
+
+        print("Ondernemingsnummer: " + str(ondernemingsnummer) + "  Omzet: " + str(omzet) + " Winst: " + str(winst))
+        
+        pg_session.execute(
+                update(PG_SME)
+                .where(PG_SME.ondernemingsnummer == ondernemingsnummer)
+                .values(omzet=omzet)
+            )      
+        pg_session.commit() 
+        break
 try:
     #opvullen_alle_oprichtingsjaren()
     #opvullen_alle_beursgenoteerd()
+
     #machinelearningdata_opvullen()
     #opvullen_alle_gemeentedata()
     #clean_up_gemeentes()
-    print('Nothing to see here')
+    #opvullen_alle_gemeenten()
+    #geef_verstedelijkingsgraad()
+    #opvullen_alle_verstedelijkingsgraden()
+    #print(omzet_winst_scrape(206460639))
+    opvullen_winst_omzet_machinelearningdata()
+    #print('Nothing to see here')
  
 
 finally:    
