@@ -101,8 +101,6 @@ def bedrijf(ondernemingsnummer):
         "gov" : governance_subdomeinen
     }
 
-
-
     print(f"environment subs: {environment_subdomeinen}")
     print(subdomein_dict)
     print(avg_hoofddomein_scores)

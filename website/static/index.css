@@ -45,13 +45,17 @@ a:hover{
 }
 
 th{
+    height: 48px;
     width: fit-content;
 }
 td{
     height: 48px;
 }
+th {
+    height: 48px
+}
 td,th{
-    text-align: center;
+    align: center;
 }
 hr{
     margin: 0.5rem 0;
