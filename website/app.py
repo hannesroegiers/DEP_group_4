@@ -1,11 +1,12 @@
 import matplotlib.pyplot as plt
 
-from flask import Flask, render_template
+from flask import Flask, render_template,json
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import (ForeignKey, MetaData, Table, create_engine, desc, func,
                         select, update)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
 
 
 def start_postgres():
@@ -77,13 +78,34 @@ def bedrijf(ondernemingsnummer):
     subdomein_scores=pg_session.query(Score.score, Score.subdomein, Subdomein.hoofddomein) \
                                         .join(Subdomein) \
                                         .where(Score.ondernemingsnummer==ondernemingsnummer,
-                                               Score.subdomein == Subdomein.subdomein)
+                                               Score.subdomein == Subdomein.subdomein)\
+                                        .order_by(Score.subdomein)
     subdomein_unique=pg_session.query(Subdomein.subdomein, Subdomein.hoofddomein).distinct()
     hoofddomein_unique=pg_session.query(Subdomein.hoofddomein).distinct()
+    alle_subdomeinen = pg_session.query(Score.subdomein).where(Score.ondernemingsnummer==ondernemingsnummer)
+    subdomein_list = [value for (value,) in alle_subdomeinen]
+
+    sector_avg_subquery = pg_session.query(Kmo.sector).where(Kmo.ondernemingsnummer==ondernemingsnummer)
+    sector_avg = pg_session.query(func.avg(Score.score).label("average"),Score.subdomein,Kmo.sector)\
+                                        .join(Kmo,Kmo.ondernemingsnummer==Score.ondernemingsnummer) \
+                                        .where(Kmo.sector==sector_avg_subquery) \
+                                        .group_by(Score.subdomein,Kmo.sector) \
+                                        .order_by(Score.subdomein)
+    
+
+    sector_avg_dict = {}
+    for entry in sector_avg:
+        sector_avg_dict[entry.subdomein] = entry.average
+    
 
     subdomein_score_dict = {}
     for entry in subdomein_scores:
         subdomein_score_dict[entry.subdomein] = entry.score
+
+    nieuw_score_dict = {}
+    for avg in sector_avg_dict:
+        nieuw_score_dict[avg] = str(float(subdomein_score_dict[avg]) - float(sector_avg_dict[avg]))
+    
 
     domeinen_dict = {}
     for hoofddomein in hoofddomein_unique:
@@ -92,7 +114,8 @@ def bedrijf(ondernemingsnummer):
             if hoofddomein.hoofddomein == subdomein.hoofddomein:
                 domeinlijst.append(subdomein.subdomein)
         domeinen_dict[hoofddomein.hoofddomein] = domeinlijst
-    print("domeindict: " + str(domeinen_dict))
+    # print("domeindict: " + str(domeinen_dict))
+    print(f"Domeinlijst: {domeinlijst}\n")
 
 
     subdomein_dict = {
@@ -101,30 +124,36 @@ def bedrijf(ondernemingsnummer):
         "gov" : governance_subdomeinen
     }
 
-    print(f"environment subs: {environment_subdomeinen}")
-    print(subdomein_dict)
-    print(avg_hoofddomein_scores)
+    # print(f"environment subs: {environment_subdomeinen}")
+    # print(subdomein_dict)
+    # print(avg_hoofddomein_scores)
     avg_hoofddomein_scores_dict={
         "env" : float(avg_hoofddomein_scores[0].score),
         "soc" : float(avg_hoofddomein_scores[1].score),
         "gov" : float(avg_hoofddomein_scores[2].score)
     }
     hoofddomein_set = {"env": "Environment", "soc": "Social", "gov": "Governance"}
-    print(avg_hoofddomein_scores_dict)
+    # print(avg_hoofddomein_scores_dict)
     
     info = pg_session.query(Kmo.bedrijfsnaam,Kmo.adres,Website.url,Kmo.ondernemingsnummer,Jaarverslag.personeelsbestand,Jaarverslag.omzet,Kmo.sector,Kmo.gemeente) \
                         .join(Website) \
                         .join(Jaarverslag) \
                         .where(Jaarverslag.ondernemingsnummer == ondernemingsnummer)
 
-    # for row in subdomein_scores:
-    #     if row.subdomein == 'biodiversity':
-    #         print(row.score)
-    subdomein_scores_dict = {
-        subdomein_dict['env']
-    }
 
-    scores= ""
+
+    # print(f"subdomein_dict: {subdomein_dict}\n")
+    # print(f"info: {info[0]}\n")
+    # print(f"avg_hoofddomein_scores_dict: {avg_hoofddomein_scores_dict}\n")
+    # print(f"subdomein_scores: {subdomein_scores}\n")
+    # print(f"hoofddomein_set: {hoofddomein_set}\n")
+    # print(f"domeinen_dict: {domeinen_dict}\n")
+    # print(f"subdomein_score_dict: {subdomein_score_dict}\n")
+    # print(f"nieuw sector avg dict:\n {nieuw_score_dict}\n")
+    # print(f"subdomeinlist: {subdomein_list}\n")
+    print(f"subdom: {subdomein_score_dict}\n")
+    print(f"avg: {sector_avg_dict}\n")
+    print(f"avg: {sector_avg_dict}\n")
     return render_template('bedrijf.html',title="SUOR - Domeinen"
                            ,subdomeinen=subdomein_dict,
                            info=info[0],
@@ -132,7 +161,10 @@ def bedrijf(ondernemingsnummer):
                            subdomeinscores=subdomein_scores,
                            hoofddomeinen=hoofddomein_set,
                            domeinmapper=domeinen_dict,
-                           score_subdomeinmapper=subdomein_score_dict)
+                           score_subdomeinmapper=subdomein_score_dict,
+                           subdomein_list = json.dumps(subdomein_list),
+                           nieuwe_score_dict = nieuw_score_dict)
+
 
 
 @app.route('/sectoren')

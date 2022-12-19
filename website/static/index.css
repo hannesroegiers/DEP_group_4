@@ -35,7 +35,9 @@ html{
 body{
     min-height: fit-content;
 }
-
+body:first-child{
+    margin: 3rem;
+}
 a{
     text-decoration: none;
     color: black;
@@ -51,11 +53,12 @@ th{
 td{
     height: 48px;
 }
-th {
-    height: 48px
-}
 td,th{
-    align: center;
+    align-items: center;
+}
+.score-table > tr:first-of-type{
+    font-weight: 600;
+    color: orange;
 }
 hr{
     margin: 0.5rem 0;
@@ -71,7 +74,7 @@ hr{
     border: 2px blue solid;
 }
 main{
-    max-width: 1320px;
+    max-width: 100%;
     margin: auto;
 }
 /* #environmental,#social,#governance{
@@ -128,7 +131,6 @@ main{
 }
 article{
     margin: 5rem auto 0;
-    border: 2px solid green;
 }
 .w-30{
     width: calc(30%);
