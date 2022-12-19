@@ -533,6 +533,7 @@ def opvullen_winst_omzet_machinelearningdata():
         print(ondernemingsnummer)
 
         omzet, winst = omzet_winst_scrape(ondernemingsnummer)
+        print("omzet: " + str(omzet) + ", winst: " + str(winst))
 
         print("Ondernemingsnummer: " + str(ondernemingsnummer) + "  Omzet: " + str(omzet) + " Winst: " + str(winst))
         
@@ -541,7 +542,6 @@ def opvullen_winst_omzet_machinelearningdata():
                 .where(PG_SME.ondernemingsnummer == ondernemingsnummer)
                 .values(omzet = omzet, winst=winst)
             )      
-        pg_session.commit() 
 
 try:
     #opvullen_alle_oprichtingsjaren()
