@@ -17,9 +17,6 @@ import cloudscraper
 import geopandas as gpd
 import matplotlib.pyplot as plt
 
-
-scraper = cloudscraper.create_scraper()
-
 # initialization of PostgreSQL stuff
 pg_engine = create_engine('postgresql://postgres:loldab123@vichogent.be:40031/durabilitysme')
 pg_conn = pg_engine.connect()
@@ -44,6 +41,22 @@ def omzet_winst_scrape(ondernemingsnummer):
             omzet_new.append(item)
     print(omzet_new)
     print(len(omzet_new))
+    # Case: Edge case, 
+    # Case: Slechts één kolom 
+    if len(omzet_new) == 4 or len(omzet_new) == 3:
+        omzet = omzet_new[0]
+        omzet = omzet[2:]
+        real_omzet = omzet.replace('.', '')
+        real_omzet = int(real_omzet)
+        real_omzet = round(real_omzet/1000)    
+        
+        winst = omzet_new[1]
+        winst = winst[2:]
+        winst = winst.replace('.', '')
+        winst = int(winst)
+        winst = round(winst/1000)
+        return real_omzet, winst
+
     # Case: winst is niet meegegeven, tweede rij is streepje - -
     if  omzet_new[7] == '-':
         omzet = omzet_new[0]
@@ -60,11 +73,20 @@ def omzet_winst_scrape(ondernemingsnummer):
     # Case: eerste rij (omzet) zijn streepjes - - - - - -
     if omzet_new[0] == '-':
         real_omzet = 0
+        if len(omzet_new) == 14:
+            winst = omzet_new[3]
+            winst = winst[2:]
+            winst = winst.replace('.', '')
+            winst = int(winst)
+            winst = round(winst/1000)
+            return real_omzet, winst
+        
         winst = omzet_new[7]
         winst = winst[2:]
         winst = winst.replace('.', '')
         winst = int(winst)
         winst = round(winst/1000)
+        
         return real_omzet, winst
 
     # Case: eerste rij is winst: dus lengte van array is 27
@@ -79,6 +101,20 @@ def omzet_winst_scrape(ondernemingsnummer):
 
     # Case: eerste kolom is niet beschikbaar
     if len(omzet_new) == 11 or len(omzet_new) == 14:
+        if omzet_new[3] == '0%':
+            omzet = omzet_new[0]
+            omzet = omzet[2:]
+            real_omzet = omzet.replace('.', '')
+            real_omzet = int(real_omzet)
+            real_omzet = round(real_omzet/1000)
+
+            winst = omzet_new[5]
+            winst = winst[2:]
+            winst = winst.replace('.', '')
+            winst = int(winst)
+            winst = round(winst/1000)
+            return real_omzet, winst
+
         omzet = omzet_new[0]
         omzet = omzet[2:]
         real_omzet = omzet.replace('.', '')
@@ -105,7 +141,6 @@ def omzet_winst_scrape(ondernemingsnummer):
     winst = round(winst/1000)
 
     return real_omzet, winst
-
 
 def machinelearningdata_opvullen():
     class PG_SME(pg_Base):  # each table is a subclass from the Base class
@@ -465,6 +500,28 @@ def opvullen_alle_verstedelijkingsgraden():
             pg_session.rollback()
         pg_session.commit()
 
+def opvullen_alle_totalen_activa():
+    class PG_SME(pg_Base):  # each table is a subclass from the Base class
+        __table__ = pg_Base.metadata.tables['machinelearningData']
+
+    xl_file = pd.read_excel("DEP_group_4/websites/kmo's_Vlaanderen_2021.xlsx", sheet_name= "Lijst")
+    
+
+    for rij in xl_file.values:
+        ondernemingsnummer = rij[7].replace(' ', '')
+        ondernemingsnummer = ondernemingsnummer[1:]
+        totaalActiva = str(rij[6]).replace('.', '')
+        totaalActiva = round(int(totaalActiva)/1000)
+
+        print("Ondernemingsnummer: " + str(ondernemingsnummer) + "  Activa: " + str(totaalActiva))
+        
+        pg_session.execute(
+                update(PG_SME)
+                .where(PG_SME.ondernemingsnummer == ondernemingsnummer)
+                .values(totaalActiva = totaalActiva)
+            )      
+        pg_session.commit() 
+
 def opvullen_winst_omzet_machinelearningdata():
     class PG_SME(pg_Base):  # each table is a subclass from the Base class
         __table__ = pg_Base.metadata.tables['machinelearningData']
@@ -482,14 +539,13 @@ def opvullen_winst_omzet_machinelearningdata():
         pg_session.execute(
                 update(PG_SME)
                 .where(PG_SME.ondernemingsnummer == ondernemingsnummer)
-                .values(omzet=omzet)
+                .values(omzet = omzet, winst=winst)
             )      
         pg_session.commit() 
-        break
+
 try:
     #opvullen_alle_oprichtingsjaren()
     #opvullen_alle_beursgenoteerd()
-
     #machinelearningdata_opvullen()
     #opvullen_alle_gemeentedata()
     #clean_up_gemeentes()
@@ -497,14 +553,11 @@ try:
     #geef_verstedelijkingsgraad()
     #opvullen_alle_verstedelijkingsgraden()
     #print(omzet_winst_scrape(206460639))
-    opvullen_winst_omzet_machinelearningdata()
-    #print('Nothing to see here')
- 
+    #opvullen_winst_omzet_machinelearningdata()
+    #opvullen_alle_totalen_activa()
+    print('Nothing to see here')
 
 finally:    
     pg_session.close()
     pg_conn.close()
     print("Connections closed")
-
-
-    
