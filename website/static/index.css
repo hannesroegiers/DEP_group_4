@@ -54,11 +54,14 @@ td{
     height: 48px;
 }
 td,th{
-    align-items: center;
+    text-align: center;
 }
 .score-table > tr:first-of-type{
     font-weight: 600;
     color: orange;
+}
+.score-head > tr > th{
+    height: 2rem;
 }
 hr{
     margin: 0.5rem 0;
@@ -77,9 +80,7 @@ main{
     max-width: 100%;
     margin: auto;
 }
-/* #environmental,#social,#governance{
-    width: 27%;
-} */
+
 #environmental>a,#social>a,#governance>a{
     border-radius: 2rem;
     height: 160px;
@@ -109,7 +110,9 @@ main{
 #environmental,#social,#governance{
     width: 45%;
 }
-
+.table-responsive{
+    margin: 5rem;
+}
 .bedrijf-titel{
     width: 42%;
     margin: auto;
@@ -147,4 +150,7 @@ article{
 .info-tabel > td{
     width: max-content;
     vertical-align: middle;
+}
+#graphs{
+    max-width: fit-content;
 }

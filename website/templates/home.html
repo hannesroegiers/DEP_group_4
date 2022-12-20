@@ -22,7 +22,7 @@
               <tr>
                   <td><a href= {{ jaarverslagen_url + kmo[0]|string }} target="_blank">{{ kmo.ondernemingsnummer }}</a></td>
                   <td class="w-30"><a href={{ url_for('bedrijf',ondernemingsnummer= kmo.ondernemingsnummer) }} target="_blank">{{ kmo.bedrijfsnaam }}</a></td>
-                  <td>komt later</td>
+                  <td>{{ "%.5f" | format(kmo.duurzaamheid) }}</td>
                   <td class="w-30">{{ kmo.sector }}</td>
                   <td>{{ kmo.gemeente }}</td>
               </tr>

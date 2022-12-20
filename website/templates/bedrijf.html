@@ -15,7 +15,6 @@
         <div class="flex-around flex-container navbar">
             <h3>{{ title }}</h3>
             <a href={{ url_for('index') }}><h3>Overzicht</h3></a>
-            <a href={{ url_for('sectoren') }}> <h3>Sectoren</h3></a>
         </div>
         <!--outline 2de <p> naar rechts-->
         <hr>
@@ -33,14 +32,15 @@
                 </div>
             </article>
         </div> -->
-        <section class="container" id="graphs">
-            <div id="columnchart_values" style="margin: 10px"></div>
+        <section class="container flex-container" id="graphs">
+            <div id="subdom_scores" style="margin: 1rem"></div>
+            <div id="situering" style="margin: 1rem"></div>
         </section>
         <section class="container">
             <div class="row">
                 {% for hoofddomein in hoofddomeinen %}
-                <table class="col-sm table table-light border border-dark border-2">
-                    <thead >
+                <table class="col-sm table table-light border border-dark ">
+                    <thead class="score-head">
                         <tr>
                             <th>{{ hoofddomeinen[hoofddomein] }}</th>
                             <th>Score</th>
@@ -87,6 +87,7 @@
                             <td>{{ info.sector }}</td>
                             <td>{{ info.ondernemingsnummer }}</td>
                         </tr>
+
                     </tbody>
                 </table>
             </div>
@@ -97,25 +98,22 @@
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <script type="text/javascript">
     google.charts.load("current", {packages:['corechart']});
-    google.charts.setOnLoadCallback(drawChart);
+    //load the first chart
+    google.charts.setOnLoadCallback(drawChart1);
+
+    //load the second chart
+    google.charts.setOnLoadCallback(drawChart2);
 
     var score_subdomeinmapper = JSON.parse('{{ score_subdomeinmapper|tojson|safe }}');
 
-    console.log('{{ score_subdomeinmapper|tojson }}')
     var sector_avg = JSON.parse('{{ nieuwe_score_dict|tojson|safe }}');
-    
-    
-
-    console.log(sector_avg);
-    console.log(typeof sector_avg);
 
     const header = [["subdomein", "score", { role: "style" }]];
     for(const [subdom,score] of Object.entries(sector_avg)){
         header.push([subdom,parseFloat(score),"color: #00008B"]);
     };
-    console.log("header\n" + header);
 
-    function drawChart() {
+    function drawChart1() {
       var data = google.visualization.arrayToDataTable(
         header
       );
@@ -130,12 +128,40 @@
 
       var options = {
         title: "Relatieve score t.o.v. sectorgemiddelde per subdomein",
-        width: 1000,
+        width: 800,
         height: 450,
         bar: {groupWidth: "80%"},
         legend: { position: "none" },
       };
-      var chart = new google.visualization.ColumnChart(document.getElementById("columnchart_values"));
-      chart.draw(view, options);
-  }
+      var chart = new google.visualization.ColumnChart(document.getElementById("subdom_scores"));
+      chart.draw(view, options);    
+    }
+
+    function drawChart2() {
+        var data = google.visualization.arrayToDataTable([
+          ["Element", "Density", { role: "style" } ],
+          ["Copper", 8.94, "#b87333"],
+          ["Silver", 10.49, "silver"],
+          ["Gold", 19.30, "gold"],
+          ["Platinum", 21.45, "color: #e5e4e2"]
+        ]);
+  
+        var view = new google.visualization.DataView(data);
+        view.setColumns([0, 1,
+                         { calc: "stringify",
+                           sourceColumn: 1,
+                           type: "string",
+                           role: "annotation" },
+                         2]);
+  
+        var options = {
+          title: "ESG score verdeling",
+          width: 800,
+          height: 450,
+          bar: {groupWidth: "80%"},
+          legend: { position: "none" },
+        };
+        var chart = new google.visualization.ColumnChart(document.getElementById("situering"));
+        chart.draw(view, options);
+    }
 </script>
