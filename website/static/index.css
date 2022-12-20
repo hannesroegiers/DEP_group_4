@@ -48,7 +48,6 @@ a:hover{
 }
 
 th{
-    height: 48px;
     width: fit-content;
 }
 td{
@@ -62,7 +61,7 @@ td,th{
     color: orange;
 }
 .score-head > tr > th{
-    height: 2rem;
+    height: 50px;
 }
 hr{
     margin: 0.5rem 0;
@@ -154,4 +153,14 @@ article{
 }
 #graphs{
     max-width: max-content;
+}
+.esg-div > table{
+    margin: 1rem;
+}
+.esg-div > thead{
+    max-height: 3rem;
+}
+
+.esg-div > table{
+    border: 2px solid green;
 }

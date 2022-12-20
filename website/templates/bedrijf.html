@@ -32,14 +32,12 @@
                 </div>
             </article>
         </div> -->
-        <section class="container flex-container" id="graphs">
-            <div id="subdom_scores" style="margin: 1rem"></div>
-            <div id="situering" style="margin: 1rem"></div>
-        </section>
+
         <section class="container">
-            <div class="row">
-                {% for hoofddomein in hoofddomeinen %}
-                <table class="col-sm table table-light border border-dark ">
+            <div class="esg-div row">
+            {% for hoofddomein in hoofddomeinen %}
+
+                <table class="col-sm table table-light border border-dark thead-dark">
                     <thead class="score-head">
                         <tr>
                             <th>{{ hoofddomeinen[hoofddomein] }}</th>
@@ -61,6 +59,10 @@
                 </table>
                 {% endfor %}
             </div>
+        </section>
+        <section class="container" id="graphs">
+            <div id="subdom_scores" style="margin: 1rem"></div>
+            <div id="situering" style="margin: 1rem"></div>
         </section>
        <article class="info">
             <h2>Algemene Info</h2>
