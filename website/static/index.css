@@ -34,6 +34,7 @@ html{
 }
 body{
     min-height: fit-content;
+    background-color: #d3d3d3;
 }
 body:first-child{
     margin: 3rem;
@@ -152,5 +153,5 @@ article{
     vertical-align: middle;
 }
 #graphs{
-    max-width: fit-content;
+    max-width: max-content;
 }

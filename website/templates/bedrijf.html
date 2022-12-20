@@ -74,7 +74,7 @@
                             <th>Omzet</th>
                             <th>Sector</th>
                             <th>Ondernemingsnummer</th>
-                            <th></th>
+                            <th>Duurzaamheids-score</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -86,6 +86,8 @@
                             <td>{{ info.omzet }}</td>
                             <td>{{ info.sector }}</td>
                             <td>{{ info.ondernemingsnummer }}</td>
+                            <td>{{ "%.5f" | format(info.duurzaamheid) }}</td>
+                            
                         </tr>
 
                     </tbody>
@@ -106,16 +108,20 @@
 
     var score_subdomeinmapper = JSON.parse('{{ score_subdomeinmapper|tojson|safe }}');
 
-    var sector_avg = JSON.parse('{{ nieuwe_score_dict|tojson|safe }}');
+    const sector_avg = JSON.parse('{{ nieuwe_score_dict|tojson|safe }}');
 
-    const header = [["subdomein", "score", { role: "style" }]];
+    const header_chart1 = [["subdomein", "score", { role: "style" }]];
     for(const [subdom,score] of Object.entries(sector_avg)){
-        header.push([subdom,parseFloat(score),"color: #00008B"]);
+        if(score < 0){
+            header_chart1.push([subdom,parseFloat(score),"color: darkred "]);
+        } else{
+            header_chart1.push([subdom,parseFloat(score),"color: darkgreen "]);
+        }
     };
 
     function drawChart1() {
       var data = google.visualization.arrayToDataTable(
-        header
+        header_chart1
       );
       
       var view = new google.visualization.DataView(data);
@@ -128,9 +134,9 @@
 
       var options = {
         title: "Relatieve score t.o.v. sectorgemiddelde per subdomein",
-        width: 800,
+        width: 900,
         height: 450,
-        bar: {groupWidth: "80%"},
+        bar: {groupWidth: "85%"},
         legend: { position: "none" },
       };
       var chart = new google.visualization.ColumnChart(document.getElementById("subdom_scores"));
@@ -138,13 +144,27 @@
     }
 
     function drawChart2() {
-        var data = google.visualization.arrayToDataTable([
-          ["Element", "Density", { role: "style" } ],
-          ["Copper", 8.94, "#b87333"],
-          ["Silver", 10.49, "silver"],
-          ["Gold", 19.30, "gold"],
-          ["Platinum", 21.45, "color: #e5e4e2"]
-        ]);
+        const perc_dict = JSON.parse('{{ perc_dict|tojson|safe }}');
+        console.log(perc_dict);
+        const header_chart2 = [["subdomein", "aantal kmo's", { role: "style" }]];
+        const percentile_kmo = perc_dict.this;
+
+        let counter =0;
+        for(const [perc,count] of Object.entries(perc_dict)){
+            if(perc=="this"){
+                continue;
+            }
+            if(counter == percentile_kmo){
+                header_chart2.push([perc,count,"color: darkgreen"]);
+            }else{
+                header_chart2.push([perc,count,"color: #00008B"]);
+            }
+            counter++;
+        };
+        console.log(header_chart2)
+        var data = google.visualization.arrayToDataTable(
+            header_chart2
+        );
   
         var view = new google.visualization.DataView(data);
         view.setColumns([0, 1,
@@ -155,10 +175,10 @@
                          2]);
   
         var options = {
-          title: "ESG score verdeling",
-          width: 800,
+          title: "ESG relatieve score verdeling",
+          width: 900,
           height: 450,
-          bar: {groupWidth: "80%"},
+          bar: {groupWidth: "70%"},
           legend: { position: "none" },
         };
         var chart = new google.visualization.ColumnChart(document.getElementById("situering"));

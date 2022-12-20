@@ -5,7 +5,8 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import (ForeignKey, MetaData, Table, create_engine, desc, func,
                         select, update)
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker,aliased
+from decimal import Decimal
 
 
 
@@ -96,9 +97,6 @@ def bedrijf(ondernemingsnummer):
                                         .group_by(Score.subdomein,Kmo.sector) \
                                         .order_by(Score.subdomein)
 
-    alle_scores = pg_session.query(func.avg(Score.score).label("score"))\
-                                        .group_by(Score.ondernemingsnummer)
-
     sector_avg_dict = {}
     for entry in sector_avg:
         sector_avg_dict[entry.subdomein] = entry.average
@@ -110,7 +108,7 @@ def bedrijf(ondernemingsnummer):
     nieuw_score_dict = {}
     for avg in sector_avg_dict:
         nieuw_score_dict[avg] = str(float(subdomein_score_dict[avg]) - float(sector_avg_dict[avg]))
-  
+    
    
     domeinen_dict = {}
     for hoofddomein in hoofddomein_unique:
@@ -120,16 +118,40 @@ def bedrijf(ondernemingsnummer):
                 domeinlijst.append(subdomein.subdomein)
         domeinen_dict[hoofddomein.hoofddomein] = domeinlijst
 
-    #score percentielen bepalen
-    # perc_arr = [0.2,0.4,0.6,0.8,1]
-    # perc_dict = {}
-    # for perc in perc_arr:
-    #     perc_subquery = pg_session.query(func.avg(Score.score).group_by(Score.ondernemingsnummer).having(func.avg(Score.score <= perc)))
-    #     perc_query = pg_session.query(func.count(perc_subquery))
+    #bepalen percentielen
+    min_max_subquery = pg_session.query(func.avg(Score.score).label('duurzaamheidsscore')).group_by(Score.ondernemingsnummer).subquery('sub')
+    alias = aliased(min_max_subquery,name="sub")
 
-    # perc_subquery = pg_session.query(func.avg(Score.score).group_by(Score.ondernemingsnummer).having(func.avg(Score.score <= 0.2)))
-    # perc_query = pg_session.query(func.count(perc_subquery))
-    # print(perc_query[0])
+    min_max_query = pg_session.query(func.min(alias.columns.duurzaamheidsscore),func.max(alias.columns.duurzaamheidsscore)).select_from(alias).one()
+    min_score,max_score = float(min_max_query[0]),float(min_max_query[1])
+    diff_score = max_score-min_score
+    aantal_kolommen_ESG_distrib = 10.0
+    iters = diff_score/aantal_kolommen_ESG_distrib
+
+
+    #general info about sme
+    info = pg_session.query(Kmo.bedrijfsnaam,Kmo.adres,Website.url,Kmo.ondernemingsnummer,Jaarverslag.personeelsbestand,Jaarverslag.omzet,Kmo.sector,Kmo.gemeente,func.avg(Score.score).label("duurzaamheid")) \
+                    .join(Website) \
+                    .join(Jaarverslag) \
+                    .join(Score,Score.ondernemingsnummer == Website.ondernemingsnummer)\
+                    .where(Jaarverslag.ondernemingsnummer == ondernemingsnummer)\
+                    .group_by(Kmo.ondernemingsnummer, Website.url,Jaarverslag.personeelsbestand,Jaarverslag.omzet)
+
+    # print(f"min {type(min_score)}, max {type(max_score)}, diff: {type(iters)}\n\n")
+    perc_arr2 = []
+    for i in np.arange(min_score,max_score,diff_score/aantal_kolommen_ESG_distrib):
+        perc_arr2.append(i)
+
+
+
+    perc_dict = {}
+    perc_dict["this"] = int((info[0].duurzaamheid/Decimal(diff_score/100))%10)
+    for count,perc in enumerate(perc_arr2):
+        perc_subquery = pg_session.query(func.avg(Score.score)).group_by(Score.ondernemingsnummer).having(func.avg(Score.score)<= perc).having(func.avg(Score.score) > perc-iters).subquery('sub')
+        perc_query = pg_session.query(func.count()).select_from(perc_subquery).scalar()
+        perc_dict[f"{count*int(aantal_kolommen_ESG_distrib)}% - {int((count+1)*aantal_kolommen_ESG_distrib)}%"] = perc_query
+    # print(f"perc_query: {perc_query}\nperc: {perc}, perc-diff: {perc-iters}, iters: {iters}")
+    print(perc_dict)
     
     subdomein_dict = {
         "env": environment_subdomeinen,
@@ -144,17 +166,6 @@ def bedrijf(ondernemingsnummer):
     }
     hoofddomein_set = {"env": "Environment", "soc": "Social", "gov": "Governance"}
 
-    
-    info = pg_session.query(Kmo.bedrijfsnaam,Kmo.adres,Website.url,Kmo.ondernemingsnummer,Jaarverslag.personeelsbestand,Jaarverslag.omzet,Kmo.sector,Kmo.gemeente) \
-                        .join(Website) \
-                        .join(Jaarverslag) \
-                        .where(Jaarverslag.ondernemingsnummer == ondernemingsnummer)
-
-
-
-    print(f"subdom: {subdomein_score_dict}\n")
-    print(f"avg: {sector_avg_dict}\n")
-    print(f"avg: {sector_avg_dict}\n")
     return render_template('bedrijf.html',title="SUOR - Domeinen"
                            ,subdomeinen=subdomein_dict,
                            info=info[0],
@@ -164,7 +175,8 @@ def bedrijf(ondernemingsnummer):
                            domeinmapper=domeinen_dict,
                            score_subdomeinmapper=subdomein_score_dict,
                            subdomein_list = json.dumps(subdomein_list),
-                           nieuwe_score_dict = nieuw_score_dict)
+                           nieuwe_score_dict = nieuw_score_dict,
+                           perc_dict = perc_dict)
 
 
 if __name__ == '__main__':
