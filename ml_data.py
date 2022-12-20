@@ -13,9 +13,12 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import numpy as np
-import cloudscraper
-import geopandas as gpd
+# import cloudscraper
+# import geopandas as gpd
 import matplotlib.pyplot as plt
+
+
+# scraper = cloudscraper.create_scraper()
 
 # initialization of PostgreSQL stuff
 pg_engine = create_engine('postgresql://postgres:loldab123@vichogent.be:40031/durabilitysme')
@@ -441,9 +444,9 @@ def geef_verstedelijking(filename):
     print("Bebouwingsgraad:")
     print(bebouwingsgraad)
 
-    shapefile = gpd.read_file(filename)
+    # shapefile = gpd.read_file(filename)
 
-    return shapefile
+    # return shapefile
     #lu_vrl_vlaa_2013.shp
 def geef_verstedelijkingsgraad():
     df = pd.read_csv('GSM_ranking_register_provincie.csv')
